@@ -17,7 +17,10 @@ export function setSupportChannelForErrors(channel) {
 }
 
 async function sendCommandErrorToSupport(interaction, error) {
-  if (!supportChannel) return;
+  if (!supportChannel) {
+    logger.warn('No hay canal de soporte configurado para enviar errores.');
+    return;
+  }
 
   const stack = error?.stack || "Sin stack trace";
   const message = error?.message || String(error);

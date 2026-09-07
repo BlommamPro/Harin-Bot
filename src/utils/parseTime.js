@@ -1,10 +1,5 @@
-/**
- * Parsea strings de tiempo como "1h30m", "7d", "5s", "2d12h"
- * Soporta: s (segundos), m (minutos), h (horas), d (días), w (semanas)
- * 
- * @param {string} input - Ej: "1h30m", "7d", "5s"
- * @returns {{ms: number, text: string} | null}
- */
+const MAX_MS = 31536000000;
+
 export function parseTime(input) {
   if (!input || typeof input !== 'string') return null;
 
@@ -40,6 +35,13 @@ export function parseTime(input) {
 
   if (totalMs <= 0) return null;
 
+  if (totalMs > MAX_MS) {
+    return {
+      ms: MAX_MS,
+      text: '1 año (máximo permitido)'
+    };
+  }
+
   const seconds = Math.floor(totalMs / 1000);
   const mins = Math.floor(seconds / 60);
   const hours = Math.floor(mins / 60);
@@ -57,10 +59,7 @@ export function parseTime(input) {
   };
 }
 
-/**
- * Límites comunes de Discord
- */
 export const TIME_LIMITS = {
-  timeout: 28 * 24 * 60 * 60 * 1000,  // 28 días (límite de Discord)
-  ban: 365 * 24 * 60 * 60 * 1000       // 1 año (para bans temporales)
+  timeout: 28 * 24 * 60 * 60 * 1000,
+  ban: 365 * 24 * 60 * 60 * 1000
 };

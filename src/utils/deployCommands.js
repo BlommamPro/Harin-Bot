@@ -3,7 +3,7 @@ import { config } from '../../config/config.js';
 import { loadCommandsForDeploy, loadContextMenusForDeploy } from '../handlers/commandHandler.js';
 import { logger } from './logger.js';
 
-setTimeout(() => {
+const timeout = setTimeout(() => {
   logger.warn('Forzando cierre del deploy por timeout de seguridad (5 min)...');
   process.exit(0);
 }, 300000);
@@ -21,7 +21,7 @@ setTimeout(() => {
 
     const allCommands = [...commands, ...contextMenus];
 
-    const rest = new REST({ 
+    const rest = new REST({
       version: '10',
       timeout: 120000,
       retries: 3
@@ -35,10 +35,13 @@ setTimeout(() => {
 
     const data = await rest.put(route, { body: allCommands });
 
+    clearTimeout(timeout);
+
     logger.success(`✅ ${data.length} comandos deployados correctamente.`);
     logger.info(`Modo: ${config.guildId ? 'Guild (instantaneo)' : 'Global (hasta 1h)'}`);
     process.exit(0);
   } catch (err) {
+    clearTimeout(timeout);
     logger.error('Error deployando comandos:', err.message || err);
     process.exit(1);
   }

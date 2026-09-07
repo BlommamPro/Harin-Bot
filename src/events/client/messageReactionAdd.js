@@ -10,75 +10,80 @@ export default {
   once: false,
 
   async execute(client, reaction, user) {
-    if (user.bot) return;
-    if (reaction.emoji.name !== '🎉') return;
+    try {
+      if (user.bot) return;
+      if (reaction.emoji.name !== '🎉') return;
 
-    const message = reaction.message;
-    if (!message.guild) return;
+      const message = reaction.message;
+      if (!message.guild) return;
 
-    const gw = await Giveaway.findOne({
-      messageId: message.id,
-      ended: false
-    });
+      if (!message.id) return;
 
-    if (!gw) return;
+      const gw = await Giveaway.findOne({
+        messageId: message.id,
+        ended: false
+      });
 
-    const member = await message.guild.members.fetch(user.id).catch(() => null);
-    if (!member) {
-      await reaction.users.remove(user.id).catch(() => {});
-      return;
-    }
+      if (!gw) return;
 
-    const errors = [];
-
-    if (gw.requiredRoleId) {
-      if (!member.roles.cache.has(gw.requiredRoleId)) {
-        errors.push(`❌ Necesitas el rol <@&${gw.requiredRoleId}> para participar.`);
+      const member = await message.guild.members.fetch(user.id).catch(() => null);
+      if (!member) {
+        await reaction.users.remove(user.id).catch(() => {});
+        return;
       }
-    }
 
-    if (gw.requiredLevel) {
-      let userLevel = 0;
-      let levelType = gw.requiredLevelType || 'guild';
-      let levelConfig = null;
+      const errors = [];
 
-      if (levelType === 'guild') {
-        const guildLevel = await getGuildLevel(message.guildId, user.id);
-        userLevel = guildLevel.level;
-        levelConfig = await getLevelConfig(message.guildId);
-        
-        if (!levelConfig.enabled) {
-          errors.push(`❌ El sistema de niveles del servidor está desactivado.`);
+      if (gw.requiredRoleId) {
+        if (!member.roles.cache.has(gw.requiredRoleId)) {
+          errors.push(`❌ Necesitas el rol <@&${gw.requiredRoleId}> para participar.`);
         }
-      } else {
-        const userData = await getUserData(user.id);
-        userLevel = userData.level || 1;
       }
 
-      if (userLevel < gw.requiredLevel) {
-        const levelLabel = levelType === 'global' ? 'Global' : 'Servidor';
-        errors.push(`❌ Necesitas nivel ${levelLabel} **${gw.requiredLevel}** (tu nivel: **${userLevel}**).`);
+      if (gw.requiredLevel) {
+        let userLevel = 0;
+        let levelType = gw.requiredLevelType || 'guild';
+        let levelConfig = null;
+
+        if (levelType === 'guild') {
+          const guildLevel = await getGuildLevel(message.guildId, user.id);
+          userLevel = guildLevel.level;
+          levelConfig = await getLevelConfig(message.guildId);
+          
+          if (!levelConfig.enabled) {
+            errors.push(`❌ El sistema de niveles del servidor está desactivado.`);
+          }
+        } else {
+          const userData = await getUserData(user.id);
+          userLevel = userData.level || 1;
+        }
+
+        if (userLevel < gw.requiredLevel) {
+          const levelLabel = levelType === 'global' ? 'Global' : 'Servidor';
+          errors.push(`❌ Necesitas nivel ${levelLabel} **${gw.requiredLevel}** (tu nivel: **${userLevel}**).`);
+        }
       }
-    }
 
-    if (errors.length > 0) {
-      await reaction.users.remove(user.id).catch(() => {});
-      
-      try {
-        const errorMessage = errors.join('\n');
-        await user.send({
-          content: `❌ **No puedes participar en este sorteo:**\n${errorMessage}`
-        }).catch(() => {
-        });
-      } catch { /* ignorar */ }
-      
-      return;
-    }
+      if (errors.length > 0) {
+        await reaction.users.remove(user.id).catch(() => {});
+        
+        try {
+          const errorMessage = errors.join('\n');
+          await user.send({
+            content: `❌ **No puedes participar en este sorteo:**\n${errorMessage}`
+          }).catch(() => {});
+        } catch { /* ignorar */ }
+        
+        return;
+      }
 
-    const added = await addParticipant(gw.giveawayId, user.id);
-    
-    if (added) {
-      await updateGiveawayEmbed(message, gw.giveawayId);
+      const added = await addParticipant(gw.giveawayId, user.id);
+      
+      if (added) {
+        await updateGiveawayEmbed(message, gw.giveawayId);
+      }
+    } catch (error) {
+      logger.warn('Error en messageReactionAdd:', error.message);
     }
   }
 };

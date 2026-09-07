@@ -1,4 +1,5 @@
 import { successEmbed } from '../../../utils/embeds.js';
+import { MessageFlags } from 'discord.js';
 
 /**
  * Este botón maneja customIds como:

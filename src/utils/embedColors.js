@@ -41,13 +41,13 @@ export const EMOJIS = {
 };
 
 export const ICONS = {
-  SUCCESS: 'https://cdn-icons-png.flaticon.com/512/190/190411.png',
-  ERROR: 'https://cdn-icons-png.flaticon.com/512/1828/1828665.png',
-  WARNING: 'https://cdn-icons-png.flaticon.com/512/923/923901.png',
-  INFO: 'https://cdn-icons-png.flaticon.com/512/1827/1827319.png',
-  ECONOMY: 'https://cdn-icons-png.flaticon.com/512/2331/2331970.png',
-  LEVELING: 'https://cdn-icons-png.flaticon.com/512/3101/3101455.png',
-  MODERATION: 'https://cdn-icons-png.flaticon.com/512/545/545665.png',
-  GIVEAWAY: 'https://cdn-icons-png.flaticon.com/512/3144/3144456.png',
+  SUCCESS: 'https://i.imgur.com/rpPqm8m.gif',
+  ERROR: 'https://i.imgur.com/1JDPXlS.gif',
+  WARNING: 'https://i.imgur.com/7Y4DnQn.gif',
+  INFO: 'https://i.imgur.com/FjoqRq5.gif',
+  ECONOMY: 'https://cdn-icons-png.flaticon.com/128/8769/8769131.png',
+  LEVELING: 'https://cdn-icons-png.flaticon.com/128/15756/15756503.png',
+  MODERATION: 'https://cdn-icons-png.flaticon.com/128/18634/18634070.png',
+  GIVEAWAY: 'https://cdn-icons-png.flaticon.com/128/2429/2429317.png',
   CLEAR: 'https://cdn-icons-png.flaticon.com/128/3286/3286176.png',
 };

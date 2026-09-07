@@ -108,29 +108,42 @@ export default {
       }
     }
 
-    const inventoryItem = {
-      itemId: item.itemId,
-      name: item.name,
-      quantity,
-      boughtAt: new Date()
-    };
+    const user = await User.findOne({ userId: interaction.user.id });
+    const existingItem = user?.inventory?.find(i => i.itemId === item.itemId);
 
-    const updatedExisting = await User.findOneAndUpdate(
-      { userId: interaction.user.id, 'inventory.itemId': item.itemId },
-      {
-        $inc: {
-          balance: -totalPrice,
-          totalPurchases: quantity,
-          'inventory.$.quantity': quantity
-        }
-      },
-      { new: true }
-    );
-
-    if (!updatedExisting) {
+    if (existingItem) {
+      const newQty = existingItem.quantity + quantity;
+      
+      await User.findOneAndUpdate(
+        { 
+          userId: interaction.user.id, 
+          'inventory.itemId': item.itemId 
+        },
+        {
+          $inc: {
+            balance: -totalPrice,
+            totalPurchases: quantity
+          },
+          $set: {
+            'inventory.$.quantity': newQty
+          }
+        },
+        { new: true }
+      );
+    } else {
       await updateUserData(interaction.user.id, {
-        $inc: { balance: -totalPrice, totalPurchases: quantity },
-        $push: { inventory: inventoryItem }
+        $inc: { 
+          balance: -totalPrice, 
+          totalPurchases: quantity 
+        },
+        $push: { 
+          inventory: { 
+            itemId: item.itemId, 
+            name: item.name, 
+            quantity: quantity, 
+            boughtAt: new Date() 
+          } 
+        }
       });
     }
 

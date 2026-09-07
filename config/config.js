@@ -8,9 +8,9 @@ export const config = {
   mongoURL: process.env.MONGO_URL,
 
   language: process.env.LANGUAGE || "es",
-  color: process.env.COLOR || "#fcc706",
-  errorColor: process.env.ERROR_COLOR || "#ED4245",
-  cooldownColor: process.env.COOLDOWN_COLOR || "#f3a0fc",
+  color: parseInt(process.env.COLOR?.replace('#', ''), 16) || 0xfcc706,
+  errorColor: parseInt(process.env.ERROR_COLOR?.replace('#', ''), 16) || 0xED4245,
+  cooldownColor: parseInt(process.env.COOLDOWN_COLOR?.replace('#', ''), 16) || 0xf3a0fc,
   ownerIds: process.env.OWNER_IDS
     ? process.env.OWNER_IDS.split(/[ ,]+/).filter((id) => id.trim())
     : [],
