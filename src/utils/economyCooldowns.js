@@ -1,9 +1,8 @@
-import { getUserData } from './guildData.js';
 import { User } from '../models/User.js';
 
 export async function checkDbCooldown(userId, commandName, cooldownMinutes) {
-  const user = await getUserData(userId);
-  const lastUsed = user.cooldowns?.[commandName];
+  const user = await User.findOne({ userId }).select(`cooldowns.${commandName}`).lean();
+  const lastUsed = user?.cooldowns?.[commandName];
 
   if (!lastUsed) {
     return { onCooldown: false, timeLeft: 0, nextTimestamp: 0 };
@@ -28,6 +27,10 @@ export async function checkDbCooldown(userId, commandName, cooldownMinutes) {
 export async function setDbCooldown(userId, commandName) {
   await User.updateOne(
     { userId },
-    { $set: { [`cooldowns.${commandName}`]: new Date() } }
+    {
+      $set: { [`cooldowns.${commandName}`]: new Date() },
+      $setOnInsert: { userId }
+    },
+    { upsert: true }
   );
 }

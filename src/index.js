@@ -41,7 +41,7 @@ async function start() {
 
   if (config.mongoURL) {
     await connectDB();
-    setupDBShutdown();
+    setupDBShutdown(client);
   }
 
   await loadEvents(client);

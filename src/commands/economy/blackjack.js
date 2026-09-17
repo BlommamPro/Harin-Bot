@@ -12,22 +12,12 @@ import {
   checkDbCooldown,
   setDbCooldown,
 } from "../../utils/economyCooldowns.js";
+import { User } from "../../models/User.js";
 
 const SUITS = ["♠", "♥", "♦", "♣"];
 const RANKS = [
-  "2",
-  "3",
-  "4",
-  "5",
-  "6",
-  "7",
-  "8",
-  "9",
-  "10",
-  "J",
-  "Q",
-  "K",
-  "A",
+  "2", "3", "4", "5", "6", "7", "8", "9", "10",
+  "J", "Q", "K", "A",
 ];
 
 function createDeck() {
@@ -130,7 +120,7 @@ export default {
         flags: MessageFlags.Ephemeral,
       });
     }
-    
+
     await updateUserData(interaction.user.id, { $inc: { balance: -amount } });
     await setDbCooldown(interaction.user.id, "blackjack");
 
@@ -141,6 +131,7 @@ export default {
 
     const playerValue = handValue(playerHand);
     const dealerValue = handValue(dealerHand);
+
     if (isBlackjack(playerHand)) {
       let winnings = 0;
       let resultText = "";
@@ -178,6 +169,7 @@ export default {
 
       return interaction.reply({ embeds: [embed] });
     }
+
     if (isBlackjack(dealerHand)) {
       const embed = createEmbed({
         title: "🃏 Blackjack — Perdiste",
@@ -195,10 +187,12 @@ export default {
 
       return interaction.reply({ embeds: [embed] });
     }
+
     const gameId = Date.now().toString(36);
     let currentBet = amount;
     let doubled = false;
     let gameOver = false;
+    let resolved = false;
 
     const generateEmbed = (status = "") => {
       const embed = createEmbed({
@@ -259,6 +253,8 @@ export default {
     });
 
     const endGame = async (i, status, winAmount = 0) => {
+      if (resolved) return;
+      resolved = true;
       gameOver = true;
       collector.stop();
 
@@ -303,9 +299,11 @@ export default {
     };
 
     const resolveDealer = async (i) => {
-      if (gameOver) return;
+      if (resolved) return;
+      resolved = true;
       gameOver = true;
       collector.stop();
+
       while (handValue(dealerHand) < 17) {
         dealerHand.push(deck.pop());
       }
@@ -369,7 +367,7 @@ export default {
 
     collector.on("collect", async (i) => {
       if (gameOver) return;
-      const action = i.customId.split('_')[1];
+      const action = i.customId.split("_")[1];
 
       if (action === "hit") {
         playerHand.push(deck.pop());
@@ -394,12 +392,16 @@ export default {
       } else if (action === "stand") {
         return resolveDealer(i);
       } else if (action === "double") {
-        if (remainingBalance < amount) {
+        const freshUser = await User.findOne({ userId: interaction.user.id }).lean();
+        const currentBalance = freshUser?.balance || 0;
+
+        if (currentBalance < amount) {
           return i.reply({
             embeds: [errorEmbed("No tienes suficiente dinero para doblar.")],
             flags: MessageFlags.Ephemeral,
           });
         }
+
         doubled = true;
         currentBet *= 2;
         await updateUserData(interaction.user.id, {
@@ -422,19 +424,27 @@ export default {
     });
 
     collector.on("end", async (_, reason) => {
-      if (reason === "time" && !gameOver) {
-        await updateUserData(interaction.user.id, {
-          $inc: { balance: currentBet },
+      if (resolved || gameOver) return;
+
+      await updateUserData(interaction.user.id, {
+        $inc: { balance: currentBet },
+      });
+
+      const reasonText =
+        reason === "time"
+          ? "⏰ Se acabó el tiempo"
+          : "⚠️ La partida fue interrumpida";
+
+      try {
+        await interaction.editReply({
+          embeds: [
+            errorEmbed(
+              `${reasonText}. Tu apuesta de **${currentBet} coins** ha sido devuelta.`,
+            ),
+          ],
+          components: [],
         });
-        try {
-          await interaction.editReply({
-            embeds: [
-              errorEmbed("⏰ Se acabó el tiempo. Tu apuesta ha sido devuelta."),
-            ],
-            components: [],
-          });
-        } catch {
-        }
+      } catch {
       }
     });
   },

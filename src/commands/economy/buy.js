@@ -72,15 +72,23 @@ export default {
       });
     }
 
+    let roleToGive = null;
+
     if (item.roleId) {
-      const role = interaction.guild.roles.cache.get(item.roleId);
-      if (role) {
-        if (interaction.member.roles.cache.has(role.id)) {
-          return interaction.reply({
-            embeds: [errorEmbed(`❌ Ya tienes el rol ${role}. No puedes comprarlo de nuevo.`)],
-            flags: MessageFlags.Ephemeral
-          });
-        }
+      roleToGive = interaction.guild.roles.cache.get(item.roleId);
+
+      if (!roleToGive) {
+        return interaction.reply({
+          embeds: [errorEmbed(`❌ El rol asociado a este item ya no existe en el servidor. Contacta a un admin.`)],
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
+      if (interaction.member.roles.cache.has(roleToGive.id)) {
+        return interaction.reply({
+          embeds: [errorEmbed(`❌ Ya tienes el rol ${roleToGive}. No puedes comprarlo de nuevo.`)],
+          flags: MessageFlags.Ephemeral
+        });
       }
 
       const botMember = interaction.guild.members.me;
@@ -91,18 +99,9 @@ export default {
         });
       }
 
-      if (role && role.position >= botMember.roles.highest.position) {
+      if (roleToGive.position >= botMember.roles.highest.position) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ El rol ${role} está por encima de mi rol más alto. No puedo asignarlo.`)],
-          flags: MessageFlags.Ephemeral
-        });
-      }
-
-      try {
-        await interaction.member.roles.add(role);
-      } catch {
-        return interaction.reply({
-          embeds: [errorEmbed('❌ No pude darte el rol.')],
+          embeds: [errorEmbed(`❌ El rol ${roleToGive} está por encima de mi rol más alto. No puedo asignarlo.`)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -113,11 +112,10 @@ export default {
 
     if (existingItem) {
       const newQty = existingItem.quantity + quantity;
-      
       await User.findOneAndUpdate(
-        { 
-          userId: interaction.user.id, 
-          'inventory.itemId': item.itemId 
+        {
+          userId: interaction.user.id,
+          'inventory.itemId': item.itemId
         },
         {
           $inc: {
@@ -132,23 +130,37 @@ export default {
       );
     } else {
       await updateUserData(interaction.user.id, {
-        $inc: { 
-          balance: -totalPrice, 
-          totalPurchases: quantity 
+        $inc: {
+          balance: -totalPrice,
+          totalPurchases: quantity
         },
-        $push: { 
-          inventory: { 
-            itemId: item.itemId, 
-            name: item.name, 
-            quantity: quantity, 
-            boughtAt: new Date() 
-          } 
+        $push: {
+          inventory: {
+            itemId: item.itemId,
+            name: item.name,
+            quantity: quantity,
+            boughtAt: new Date()
+          }
         }
       });
     }
 
     if (item.stock >= 0) {
       await updateShopItemStock(interaction.guildId, itemId, item.stock - quantity);
+    }
+
+    if (roleToGive) {
+      try {
+        await interaction.member.roles.add(roleToGive);
+      } catch (err) {
+        await updateUserData(interaction.user.id, {
+          $inc: { balance: totalPrice, totalPurchases: -quantity }
+        });
+        return interaction.reply({
+          embeds: [errorEmbed(`❌ No pude darte el rol: ${err.message}\n💰 Se te ha devuelto el dinero.`)],
+          flags: MessageFlags.Ephemeral
+        });
+      }
     }
 
     await setDbCooldown(interaction.user.id, 'buy');
@@ -158,7 +170,7 @@ export default {
 
     const embed = successEmbed(
       `✅ Compraste **${quantity}x ${item.name}** por **${totalPrice} coins**!` +
-      (item.roleId ? `\n🎁 Se te ha otorgado el rol <@&${item.roleId}>` : '')
+      (roleToGive ? `\n🎁 Se te ha otorgado el rol ${roleToGive}` : '')
     );
     embed.setTitle('🛒 Compra Exitosa');
 

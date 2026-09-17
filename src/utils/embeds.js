@@ -146,7 +146,7 @@ export function cooldownEmbed(timeLeft) {
   return createEmbed({
     color: config.cooldownColor || 0xFEE75C,
     title: `${EMOJIS.TIMER} En cooldown`,
-    description: `⏳ Espera **${timeLeft}** segundos antes de usar esto.`,
+    description: `${EMOJIS.TIMER} Espera **${timeLeft}** segundos antes de usar esto.`,
     thumbnail: ICONS.WARNING,
   });
 }

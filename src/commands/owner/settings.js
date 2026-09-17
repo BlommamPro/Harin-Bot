@@ -35,13 +35,13 @@ export default {
     )
     .addSubcommand(sub =>
       sub.setName('clean')
-         .setDescription('🧹 Limpiar datos del servidor (mantiene configuración)')
+         .setDescription('🧹 Limpiar datos del servidor actual (mantiene configuración)')
          .addStringOption(opt =>
            opt.setName('que')
               .setDescription('Qué limpiar')
               .setRequired(true)
               .addChoices(
-                { name: '🗑️ Todos los datos de usuarios', value: 'all_users' },
+                { name: '🗑️ Todos los datos de usuarios (niveles, warns y economía)', value: 'all_users' },
                 { name: '💰 Datos de economía (balances)', value: 'economy' },
                 { name: '⭐ Datos de niveles', value: 'levels' },
                 { name: '⚠️ Warns de usuarios', value: 'warns' }
@@ -111,7 +111,7 @@ export default {
           `💬 **Roles:** ${guild.roles.cache.size}`,
           '',
           `**📊 Datos en Base de Datos**`,
-          `👤 **Usuarios totales:** ${userCount}`,
+          `👤 **Usuarios totales (global):** ${userCount}`,
           `⭐ **Niveles en este servidor:** ${guildLevelCount}`,
           `⚠️ **Warns en este servidor:** ${warnCount}`,
           '',
@@ -210,36 +210,61 @@ export default {
       const { GuildLevel } = await import('../../models/GuildLevel.js');
       const { Warn } = await import('../../models/Warn.js');
 
+      const guildUserIds = await GuildLevel
+        .find({ guildId: interaction.guildId })
+        .distinct('userId');
+
+      const warnUserIds = await Warn
+        .find({ guildId: interaction.guildId })
+        .distinct('userId');
+
+      const allGuildUserIds = [...new Set([...guildUserIds, ...warnUserIds])];
+
       switch (what) {
-        case 'all_users':
-          const userResult = await User.deleteMany({});
+        case 'all_users': {
+          let userResult = { deletedCount: 0 };
+
+          if (allGuildUserIds.length > 0) {
+            userResult = await User.deleteMany({ userId: { $in: allGuildUserIds } });
+          }
+
           const levelResult = await GuildLevel.deleteMany({ guildId: interaction.guildId });
           const warnResult = await Warn.deleteMany({ guildId: interaction.guildId });
-          
-          resultMessage = `✅ **Datos limpiados en este servidor:**\n` +
+
+          resultMessage =
+            `✅ **Datos limpiados en este servidor:**\n` +
             `👤 ${userResult.deletedCount} usuarios eliminados\n` +
             `⭐ ${levelResult.deletedCount} niveles eliminados\n` +
-            `⚠️ ${warnResult.deletedCount} warns eliminados`;
+            `⚠️ ${warnResult.deletedCount} warns eliminados\n\n` +
+            `🔒 **Solo se afectó a este servidor.** Los otros servidores no fueron tocados.`;
           break;
+        }
 
-        case 'economy':
-          const usersWithLevels = await GuildLevel.find({ guildId: interaction.guildId }).distinct('userId');
-          const userUpdateResult = await User.updateMany(
-            { userId: { $in: usersWithLevels } },
-            { balance: 500, bank: 0, inventory: [] }
-          );
-          resultMessage = `💰 **Economía reiniciada para ${userUpdateResult.modifiedCount} usuarios** en este servidor.\nTodos tienen ahora 500 coins y banco vacío.`;
+        case 'economy': {
+          let userUpdateResult = { modifiedCount: 0 };
+
+          if (allGuildUserIds.length > 0) {
+            userUpdateResult = await User.updateMany(
+              { userId: { $in: allGuildUserIds } },
+              { balance: 500, bank: 0, inventory: [] }
+            );
+          }
+
+          resultMessage = `💰 **Economía reiniciada para ${userUpdateResult.modifiedCount} usuarios** de este servidor.\nTodos tienen ahora 500 coins y banco vacío.`;
           break;
+        }
 
-        case 'levels':
+        case 'levels': {
           const levelDeleteResult = await GuildLevel.deleteMany({ guildId: interaction.guildId });
           resultMessage = `⭐ **${levelDeleteResult.deletedCount} niveles eliminados** en este servidor.`;
           break;
+        }
 
-        case 'warns':
+        case 'warns': {
           const warnDeleteResult = await Warn.deleteMany({ guildId: interaction.guildId });
           resultMessage = `⚠️ **${warnDeleteResult.deletedCount} warns eliminados** en este servidor.`;
           break;
+        }
 
         default:
           return interaction.reply({

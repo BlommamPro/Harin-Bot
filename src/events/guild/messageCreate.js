@@ -32,11 +32,20 @@ export default {
       let newXp = (userData?.xp || 0) + xpGain;
       let newLevel = userData?.level || 1;
       let leveledUp = false;
+      let safety = 0;
 
-      while (newXp >= getXpForGlobalLevel(newLevel)) {
+      while (newXp >= getXpForGlobalLevel(newLevel) && safety < 100) {
         newXp -= getXpForGlobalLevel(newLevel);
         newLevel++;
         leveledUp = true;
+        safety++;
+      }
+
+      if (safety >= 100) {
+        logger.warn(
+          `Posible bucle infinito en addGlobalXp para ${userId} (nivel ${newLevel}). Datos posiblemente corruptos.`
+        );
+        return;
       }
 
       await updateUserData(userId, {

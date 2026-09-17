@@ -22,16 +22,29 @@ export async function disconnectDB() {
   }
 }
 
-export function setupDBShutdown() {
-  process.on('SIGINT', async () => {
-    logger.warn('Recibida señal SIGINT, cerrando conexión...');
-    await disconnectDB();
-    process.exit(0);
-  });
+export function setupDBShutdown(client = null) {
+  let shuttingDown = false;
 
-  process.on('SIGTERM', async () => {
-    logger.warn('Recibida señal SIGTERM, cerrando conexión...');
+  const shutdown = async (signal) => {
+    if (shuttingDown) return;
+    shuttingDown = true;
+
+    logger.warn(`Recibida señal ${signal}, cerrando limpiamente...`);
+
+    try {
+      if (client && client.isReady()) {
+        client.destroy();
+        logger.info('Cliente de Discord cerrado');
+      }
+    } catch (err) {
+      logger.error('Error cerrando cliente Discord:', err.message);
+    }
+
     await disconnectDB();
+
     process.exit(0);
-  });
+  };
+
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
 }

@@ -76,14 +76,4 @@ export function setupProcessHandlers(client) {
   client.on('warn', (info) => {
     logger.warn('[DISCORD WARN]', info);
   });
-
-  process.on('SIGINT', () => {
-    logger.warn('Recibida señal SIGINT, cerrando...');
-    process.exit(0);
-  });
-
-  process.on('SIGTERM', () => {
-    logger.warn('Recibida señal SIGTERM, cerrando...');
-    process.exit(0);
-  });
 }
