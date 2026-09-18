@@ -6,7 +6,6 @@ const UserSchema = new mongoose.Schema({
   balance: { type: Number, default: 500 },
   bank: { type: Number, default: 0 },
   dailyStreak: { type: Number, default: 0 },
-  lastDaily: { type: Date, default: null },
   xp: { type: Number, default: 0 },
   level: { type: Number, default: 1 },
   messages: { type: Number, default: 0 },

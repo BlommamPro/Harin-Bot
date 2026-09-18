@@ -37,7 +37,7 @@ export default {
 
     const nowMs = Date.now();
     let newStreak = 1;
-    const isFirstDaily = !userData.lastDaily && !userData.cooldowns?.daily;
+    const isFirstDaily = !userData.cooldowns?.daily;
 
     const lastDaily = userData.cooldowns?.daily;
     if (lastDaily) {

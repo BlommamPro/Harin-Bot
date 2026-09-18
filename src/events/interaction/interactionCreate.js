@@ -214,7 +214,6 @@ export default {
             });
           }
         } catch {
-          /* ya respondido o expirado */
         }
       }
     } else if (interaction.isButton()) {
@@ -278,6 +277,23 @@ async function handleComponent(client, interaction, type) {
     }
   }
 
+  if (handler.BOT_PERMISSIONS?.length && interaction.guild) {
+    const botPermCheck = checkBotPermissions(
+      interaction.guild.members.me,
+      handler.BOT_PERMISSIONS,
+    );
+    if (!botPermCheck.allowed) {
+      return interaction.reply({
+        embeds: [
+          errorEmbed(
+            `Necesito los permisos: \`${botPermCheck.missing.join(", ")}\``,
+          ),
+        ],
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+  }
+
   const { onCooldown, timeLeft } = checkCooldown(
     client,
     handler.customId,
@@ -322,7 +338,6 @@ async function handleComponent(client, interaction, type) {
         await interaction.reply(replyPayload);
       }
     } catch {
-      /* ya respondido o expirado */
     }
   }
 }
