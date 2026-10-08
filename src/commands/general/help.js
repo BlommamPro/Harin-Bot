@@ -58,7 +58,9 @@ export default {
       description: [
         `Selecciona una categoría del menú de abajo para ver sus comandos.`,
         ``,
-        `**Total:** ${client.slashCommands.size} comandos en ${categories.size} categorías`
+        `**Total:** ${client.slashCommands.size} comandos en ${categories.size} categorías`,
+        ``,
+        `[Política de Privacidad](https://blommampro.github.io/harin-bot-legal/privacy)`
       ].join('\n')
     });
 
