@@ -32,8 +32,7 @@ function formatBytes(bytes) {
 export default {
   CMD: new SlashCommandBuilder()
     .setName('botinfo')
-    .setDescription('Muestra informacion del bot')
-    .setDMPermission(true),
+    .setDescription('Muestra informacion del bot'),
 
   PERMISSIONS: [],
   BOT_PERMISSIONS: [],

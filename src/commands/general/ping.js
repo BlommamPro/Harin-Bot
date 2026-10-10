@@ -5,8 +5,7 @@ import { emojis } from '../../utils/emojis.js';
 export default {
   CMD: new SlashCommandBuilder()
     .setName('ping')
-    .setDescription('Muestra la latencia del bot')
-    .setDMPermission(false),
+    .setDescription('Muestra la latencia del bot'),
 
   PERMISSIONS: [],
   BOT_PERMISSIONS: [],

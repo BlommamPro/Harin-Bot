@@ -85,8 +85,7 @@ export default {
           flags: MessageFlags.Ephemeral,
         });
       }
-
-      if (command.NSFW && !interaction.channel.nsfw) {
+      if (command.NSFW && interaction.guild && !interaction.channel.nsfw) {
         return interaction.reply({
           embeds: [
             errorEmbed("Este comando solo se puede usar en canales NSFW"),
@@ -94,7 +93,6 @@ export default {
           flags: MessageFlags.Ephemeral,
         });
       }
-
       if (command.PERMISSIONS?.length && interaction.guild) {
         const permCheck = checkPermissions(
           interaction.member,

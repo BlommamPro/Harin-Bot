@@ -1,11 +1,10 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
 
 export default {
   CMD: new SlashCommandBuilder()
     .setName('avatar')
     .setDescription('Muestra el avatar de un usuario')
-    .setDMPermission(false)
     .addUserOption(opt =>
       opt.setName('usuario')
          .setDescription('Usuario a ver (por defecto: tú)')

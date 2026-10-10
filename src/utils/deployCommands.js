@@ -14,10 +14,24 @@ const timeout = setTimeout(() => {
     const contextMenus = [];
 
     const slashCmds = await loadCommandsForDeploy();
-    slashCmds.forEach(cmd => commands.push(cmd.CMD.toJSON()));
+    slashCmds.forEach(cmd => {
+      const json = cmd.CMD.toJSON();
+      const allowUserInstall = cmd.GUILD_ONLY === false;
+
+      json.integration_types = allowUserInstall ? [0, 1] : [0];
+      json.contexts = allowUserInstall ? [0, 1, 2] : [0];
+      commands.push(json);
+    });
 
     const ctxMenus = await loadContextMenusForDeploy();
-    ctxMenus.forEach(menu => contextMenus.push(menu.CMD.toJSON()));
+    ctxMenus.forEach(menu => {
+      const json = menu.CMD.toJSON();
+      const allowUserInstall = menu.GUILD_ONLY === false;
+
+      json.integration_types = allowUserInstall ? [0, 1] : [0];
+      json.contexts = allowUserInstall ? [0, 1, 2] : [0];
+      contextMenus.push(json);
+    });
 
     const allCommands = [...commands, ...contextMenus];
 

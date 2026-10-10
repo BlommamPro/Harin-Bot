@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder , MessageFlags} from 'discord.js';
+import { SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder, MessageFlags } from 'discord.js';
 import { createEmbed } from '../../utils/embeds.js';
 
 const DEFAULT_EMOJIS = {
@@ -37,13 +37,13 @@ function getCategoryInfo(catName) {
 export default {
   CMD: new SlashCommandBuilder()
     .setName('help')
-    .setDescription('Muestra la lista de comandos disponibles')
-    .setDMPermission(false),
+    .setDescription('Muestra la lista de comandos disponibles'),
 
   PERMISSIONS: [],
   BOT_PERMISSIONS: [],
   OWNER: false,
   COOLDOWN: 5,
+  GUILD_ONLY: false,
 
   async execute(client, interaction, guildData, userData) {
     const categories = new Map();

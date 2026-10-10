@@ -13,14 +13,13 @@ const STREAK_BONUS = 50;
 export default {
   CMD: new SlashCommandBuilder()
     .setName("daily")
-    .setDescription("Reclama tu recompensa diaria de coins")
-    .setDMPermission(false),
+    .setDescription("Reclama tu recompensa diaria de coins"),
 
   PERMISSIONS: [],
   BOT_PERMISSIONS: [],
   OWNER: false,
   COOLDOWN: 0,
-  GUILD_ONLY: true,
+  GUILD_ONLY: false,
 
   async execute(client, interaction, guildData, userData) {
     const cd = await checkDbCooldown(interaction.user.id, "daily", 24 * 60);

@@ -5,7 +5,6 @@ export default {
   CMD: new SlashCommandBuilder()
     .setName('banner')
     .setDescription('Muestra el banner de un usuario')
-    .setDMPermission(false)
     .addUserOption(opt =>
       opt.setName('usuario')
          .setDescription('Usuario a ver (por defecto: tú)')
