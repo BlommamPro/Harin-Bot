@@ -1,11 +1,6 @@
 import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder , MessageFlags} from 'discord.js';
 import { successEmbed } from '../../../utils/embeds.js';
 
-/**
- * Este modal maneja customIds como:
- * - example-report
- * - example-report-{userId}
- */
 
 export default {
   customId: 'example-report',

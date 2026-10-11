@@ -1,10 +1,10 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
 import { createProgressBar, formatPercentage } from '../../utils/embedDecorations.js';
-import { getUserData } from '../../utils/guildData.js';
-import { getGuildLevel } from '../../utils/levelSystem.js';
+import { getUserData, getGuildEconomy } from '../../utils/guildData.js';
+import { getGuildLevel, getXpForLevel } from '../../utils/levelSystem.js';
 import { getAllBadgesText } from '../../utils/badges.js';
-import { getXpForLevel } from '../../utils/levelSystem.js';
+import { formatAchievements } from '../../utils/achievements.js';
 
 function getGlobalXpForLevel(level) {
   return level * level * 100;
@@ -16,9 +16,7 @@ export default {
     .setDescription('👤 Muestra tu perfil o el de otro usuario')
     .setDMPermission(false)
     .addUserOption(opt =>
-      opt.setName('usuario')
-         .setDescription('Usuario a ver (opcional)')
-         .setRequired(false)
+      opt.setName('usuario').setDescription('Usuario a ver (opcional)').setRequired(false)
     ),
 
   PERMISSIONS: [],
@@ -30,6 +28,7 @@ export default {
   async execute(client, interaction, guildData, userData) {
     const target = interaction.options.getUser('usuario') || interaction.user;
     const data = await getUserData(target.id, target.username);
+    const economy = await getGuildEconomy(interaction.guildId, target.id, target.username);
 
     const guildLevelData = await getGuildLevel(interaction.guildId, target.id);
     const guildXpNeeded = getXpForLevel(guildLevelData.level);
@@ -40,9 +39,11 @@ export default {
     const globalProgress = formatPercentage(data.xp, globalXpNeeded);
     const globalBar = createProgressBar(data.xp, globalXpNeeded, 16);
 
-    const wallet = data?.balance || 0;
-    const bank = data?.bank || 0;
+    const wallet = economy?.balance || 0;
+    const bank = economy?.bank || 0;
     const total = wallet + bank;
+
+    const achievements = await formatAchievements(interaction.guildId, target.id);
 
     const embed = createEmbed({
       color: COLORS.LEVELING,
@@ -51,9 +52,9 @@ export default {
       description: [
         `📅 **Cuenta creada:** <t:${Math.floor(target.createdTimestamp / 1000)}:R>`,
         `💬 **Mensajes:** \`${data.messages || 0}\``,
-        `🔥 **Racha diaria:** \`${data.dailyStreak || 0} días\``,
+        `🔥 **Racha diaria:** \`${economy.dailyStreak || 0} días\``,
         '',
-        `💰 **Economía**`,
+        `💰 **Economía (${interaction.guild.name})**`,
         `💵 En mano: \`${wallet} coins\``,
         `🏦 Banco: \`${bank} coins\``,
         `📊 Total: \`${total} coins\``,
@@ -63,6 +64,8 @@ export default {
         `\`${guildBar}\` \`${guildProgress}%\``,
         `🌍 Global: Nivel \`${data.level}\``,
         `\`${globalBar}\` \`${globalProgress}%\``,
+        '',
+        `🏆 **Logros:** \`${achievements.unlocked}/${achievements.total}\``,
         '',
         `🎖️ **Insignias**`,
         getAllBadgesText(data.badges) || '`Ninguna`'

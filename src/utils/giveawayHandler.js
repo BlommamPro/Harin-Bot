@@ -2,10 +2,6 @@ import { Giveaway } from '../models/Giveaway.js';
 import { createEmbed, COLORS } from './embeds.js';
 import { logger } from './logger.js';
 
-export async function getActiveGiveaways() {
-  return await Giveaway.find({ ended: false, endTime: { $gt: new Date() } });
-}
-
 export async function endGiveaway(client, giveawayId, guildId = null) {
   const query = { giveawayId, ended: false };
   if (guildId) query.guildId = guildId;

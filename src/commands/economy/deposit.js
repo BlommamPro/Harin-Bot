@@ -1,9 +1,12 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { updateUserData } from '../../utils/guildData.js';
+import { getGuildEconomy, updateGuildEconomy, getUserData } from '../../utils/guildData.js';
+import { getUpgradeEffect } from '../../utils/economyConfig.js';
 
-function getBankCapacity(level) {
-  return level * 5000;
+function getBankCapacity(level, upgrades) {
+  const base = level * 5000;
+  const multiplier = getUpgradeEffect(upgrades, 'better_bank');
+  return multiplier > 0 ? Math.floor(base * multiplier) : base;
 }
 
 export default {
@@ -12,9 +15,7 @@ export default {
     .setDescription('Deposita dinero en el banco')
     .setDMPermission(false)
     .addStringOption(opt =>
-      opt.setName('cantidad')
-         .setDescription('Cantidad a depositar o "all" para todo')
-         .setRequired(true)
+      opt.setName('cantidad').setDescription('Cantidad a depositar o "all"').setRequired(true)
     ),
 
   PERMISSIONS: [],
@@ -25,55 +26,46 @@ export default {
 
   async execute(client, interaction, guildData, userData) {
     const input = interaction.options.getString('cantidad').toLowerCase().trim();
-    const currentWallet = userData?.balance || 0;
-    const currentBank = userData?.bank || 0;
-    const userLevel = userData?.level || 1;
-    const maxCapacity = getBankCapacity(userLevel);
+    const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
+    const globalUser = await getUserData(interaction.user.id);
+
+    const currentWallet = economy?.balance || 0;
+    const currentBank = economy?.bank || 0;
+    const userLevel = globalUser?.level || 1;
+    const maxCapacity = getBankCapacity(userLevel, economy.upgrades);
 
     let amount = 0;
-
     if (input === 'all') {
       amount = currentWallet;
     } else {
       amount = parseInt(input, 10);
       if (isNaN(amount) || amount <= 0) {
-        return interaction.reply({
-          embeds: [errorEmbed('Introduce una cantidad válida o `all`.')],
-          flags: MessageFlags.Ephemeral
-        });
+        return interaction.reply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')], flags: MessageFlags.Ephemeral });
       }
     }
 
     if (currentWallet <= 0) {
-      return interaction.reply({
-        embeds: [errorEmbed('No tienes dinero en mano para depositar.')],
-        flags: MessageFlags.Ephemeral
-      });
+      return interaction.reply({ embeds: [errorEmbed('No tienes dinero en mano para depositar.')], flags: MessageFlags.Ephemeral });
     }
-    
+
     if (amount >= currentWallet) {
       amount = currentWallet - 1;
       if (amount <= 0) {
-        return interaction.reply({
-          embeds: [errorEmbed('Debes dejar al menos **1 coin** en mano. No puedes depositar todo.')],
-          flags: MessageFlags.Ephemeral
-        });
+        return interaction.reply({ embeds: [errorEmbed('Debes dejar al menos **1 coin** en mano.')], flags: MessageFlags.Ephemeral });
       }
     }
 
     const spaceLeft = maxCapacity - currentBank;
     if (spaceLeft <= 0) {
       return interaction.reply({
-        embeds: [errorEmbed(`Tu banco está lleno. Capacidad máxima: **${maxCapacity} coins** (Nivel ${userLevel}). Sube de nivel para aumentarla.`)],
+        embeds: [errorEmbed(`Tu banco está lleno. Capacidad: **${maxCapacity}** (Nivel ${userLevel}).`)],
         flags: MessageFlags.Ephemeral
       });
     }
 
-    if (amount > spaceLeft) {
-      amount = spaceLeft;
-    }
+    if (amount > spaceLeft) amount = spaceLeft;
 
-    await updateUserData(interaction.user.id, {
+    await updateGuildEconomy(interaction.guildId, interaction.user.id, {
       $inc: { balance: -amount, bank: amount }
     });
 
@@ -84,8 +76,7 @@ export default {
       `Depositaste **${amount} coins** en el banco.\n\n` +
       `💰 En mano: **${newWallet}**\n` +
       `🏦 Banco: **${newBank} / ${maxCapacity}**\n` +
-      `📊 Total: **${newWallet + newBank}**\n` +
-      `📈 Capacidad usada: **${Math.round((newBank / maxCapacity) * 100)}%**`
+      `📊 Total: **${newWallet + newBank}**`
     );
     embed.setTitle('🏦 Depósito Exitoso');
 

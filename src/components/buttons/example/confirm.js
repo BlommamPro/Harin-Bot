@@ -1,15 +1,6 @@
 import { successEmbed } from '../../../utils/embeds.js';
 import { MessageFlags } from 'discord.js';
 
-/**
- * Este botón maneja customIds como:
- * - example-confirm (coincidencia exacta)
- * - example-confirm-{userId} (coincidencia por patrón)
- * 
- * Para usar con datos dinámicos, crea el botón así:
- * new ButtonBuilder().setCustomId(`example-confirm-{${interaction.user.id}}`)
- */
-
 export default {
   customId: 'example-confirm',
 

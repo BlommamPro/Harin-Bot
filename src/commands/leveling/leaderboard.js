@@ -1,4 +1,4 @@
-import { SlashCommandBuilder , MessageFlags} from 'discord.js';
+import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getGuildLeaderboard } from '../../utils/levelSystem.js';
 import { User } from '../../models/User.js';
@@ -6,7 +6,7 @@ import { User } from '../../models/User.js';
 export default {
   CMD: new SlashCommandBuilder()
     .setName('leaderboard')
-    .setDescription('Tabla de clasificación')
+    .setDescription('🏆 Tabla de clasificación de niveles')
     .setDMPermission(false)
     .addStringOption(opt =>
       opt.setName('tipo')
@@ -14,8 +14,7 @@ export default {
          .setRequired(false)
          .addChoices(
            { name: '🏠 Niveles del Servidor', value: 'guild_levels' },
-           { name: '🌍 Niveles Globales', value: 'global_levels' },
-           { name: '💰 Más Ricos', value: 'coins' }
+           { name: '🌍 Niveles Globales', value: 'global_levels' }
          )
     ),
 
@@ -32,7 +31,10 @@ export default {
       const top = await getGuildLeaderboard(interaction.guildId, 10);
 
       if (top.length === 0) {
-        return interaction.reply({ embeds: [errorEmbed('Nadie tiene niveles en este servidor todavía.')], flags: MessageFlags.Ephemeral });
+        return interaction.reply({
+          embeds: [errorEmbed('Nadie tiene niveles en este servidor todavía.')],
+          flags: MessageFlags.Ephemeral
+        });
       }
 
       const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
@@ -51,6 +53,13 @@ export default {
     if (type === 'global_levels') {
       const top = await User.find().sort({ level: -1, xp: -1 }).limit(10);
 
+      if (top.length === 0) {
+        return interaction.reply({
+          embeds: [errorEmbed('Nadie tiene niveles globales todavía.')],
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
       const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
       const description = top.map((u, i) =>
         `${medals[i] || '🔹'} <@${u.userId}> — Nivel **${u.level}** | XP: \`${u.xp}\``
@@ -58,27 +67,6 @@ export default {
 
       const embed = createEmbed({
         title: '🏆 Top Niveles Globales',
-        description
-      });
-
-      return interaction.reply({ embeds: [embed] });
-    }
-
-    if (type === 'coins') {
-      const top = await User.aggregate([
-        { $addFields: { totalWealth: { $add: ['$balance', '$bank'] } } },
-        { $sort: { totalWealth: -1 } },
-        { $limit: 10 }
-      ]);
-
-      const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
-      const description = top.map((u, i) => {
-        const total = (u.balance || 0) + (u.bank || 0);
-        return `${medals[i] || '🔹'} <@${u.userId}> — **${total} coins**`;
-      }).join('\n');
-
-      const embed = createEmbed({
-        title: '🏆 Top Más Ricos',
         description
       });
 

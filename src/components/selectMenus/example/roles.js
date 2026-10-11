@@ -1,12 +1,6 @@
 import { successEmbed, errorEmbed } from '../../../utils/embeds.js';
 import { MessageFlags } from 'discord.js';
 
-/**
- * Este select maneja customIds como:
- * - example-roles
- * - example-roles-{userId}
- */
-
 export default {
   customId: 'example-roles',
 

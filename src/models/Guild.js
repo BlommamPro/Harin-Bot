@@ -7,9 +7,7 @@ const GuildSchema = new mongoose.Schema({
   welcomeChannel: { type: String, default: null },
   goodbyeChannel: { type: String, default: null },
   logChannel: { type: String, default: null },
-  autoroleId: { type: String, default: null },
-  economyEnabled: { type: Boolean, default: true },
-  giveawaysEnabled: { type: Boolean, default: true }
+  autoroleId: { type: String, default: null }
 });
 
 export const Guild = mongoose.model('Guild', GuildSchema);

@@ -1,6 +1,6 @@
 import { getGuildData, getUserData, updateUserData } from '../../utils/guildData.js';
 import { addGuildXp, getLevelConfig, getXpForLevel } from '../../utils/levelSystem.js';
-import { checkAndAwardBadge } from '../../utils/badges.js';
+import { User } from '../../models/User.js';
 import { logger } from '../../utils/logger.js';
 
 const MIN_XP = 15;
@@ -11,6 +11,18 @@ const guildXpCooldowns = new Map();
 
 function getXpForGlobalLevel(level) {
   return level * level * 100;
+}
+
+async function awardBadgeIfMissing(userId, badgeId) {
+  const user = await User.findOne({ userId });
+  if (!user) return false;
+  if (user.badges.includes(badgeId)) return false;
+
+  await User.updateOne(
+    { userId },
+    { $push: { badges: badgeId } }
+  );
+  return true;
 }
 
 export default {
@@ -57,8 +69,8 @@ export default {
         $inc: { messages: 1 }
       });
 
-      if (newLevel >= 10) await checkAndAwardBadge(userId, 'level_10', client);
-      if (newLevel >= 50) await checkAndAwardBadge(userId, 'level_50', client);
+      if (newLevel >= 10) await awardBadgeIfMissing(userId, 'level_10');
+      if (newLevel >= 50) await awardBadgeIfMissing(userId, 'level_50');
 
       if (leveledUp) {
         logger.success(`${message.author.tag} subió al nivel global ${newLevel}!`);

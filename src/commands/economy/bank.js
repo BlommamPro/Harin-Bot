@@ -1,9 +1,12 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
-import { getUserData } from '../../utils/guildData.js';
+import { getGuildEconomy, getUserData } from '../../utils/guildData.js';
+import { getUpgradeEffect } from '../../utils/economyConfig.js';
 
-function getBankCapacity(level) {
-  return level * 5000;
+function getBankCapacity(level, upgrades) {
+  const base = level * 5000;
+  const multiplier = getUpgradeEffect(upgrades, 'better_bank');
+  return multiplier > 0 ? Math.floor(base * multiplier) : base;
 }
 
 export default {
@@ -25,13 +28,14 @@ export default {
 
   async execute(client, interaction, guildData, userData) {
     const target = interaction.options.getUser('usuario') || interaction.user;
-    const data = await getUserData(target.id, target.username);
+    const data = await getGuildEconomy(interaction.guildId, target.id, target.username);
+    const userDataGlobal = await getUserData(target.id, target.username);
 
     const wallet = data?.balance || 0;
     const bank = data?.bank || 0;
     const total = wallet + bank;
-    const level = data?.level || 1;
-    const maxCapacity = getBankCapacity(level);
+    const level = userDataGlobal?.level || 1;
+    const maxCapacity = getBankCapacity(level, data.upgrades);
     const percentUsed = Math.round((bank / maxCapacity) * 100);
 
     const filled = Math.round((bank / maxCapacity) * 10);
@@ -47,8 +51,14 @@ export default {
         `📊 **Total:** ${total} coins`,
         '',
         `📈 **Capacidad:** \`${progressBar}\` ${percentUsed}%`,
-        `⭐ **Nivel:** ${level}`
-      ].join('\n')
+        `⭐ **Nivel:** ${level}`,
+        '',
+        `> 💡 Este balance es **solo de este servidor**.`
+      ].join('\n'),
+      footer: {
+        text: `Solicitado por ${interaction.user.username}`,
+        icon: interaction.user.displayAvatarURL()
+      }
     });
 
     await interaction.reply({ embeds: [embed] });

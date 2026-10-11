@@ -68,6 +68,27 @@ export default {
   once: false,
 
   async execute(client, interaction) {
+    if (interaction.isAutocomplete()) {
+      try {
+        const command = client.slashCommands.get(interaction.commandName);
+        if (!command) {
+          return interaction.respond([]);
+        }
+
+        if (typeof command.autocomplete === 'function') {
+          return await command.autocomplete(client, interaction);
+        }
+
+        return interaction.respond([]);
+      } catch (err) {
+        logger.error(`Error en autocomplete de /${interaction.commandName}:`, err.message);
+        try {
+          await interaction.respond([]);
+        } catch { /* ignorar */ }
+      }
+      return;
+    }
+
     if (interaction.isChatInputCommand()) {
       const command = client.slashCommands.get(interaction.commandName);
       if (!command) return;
@@ -85,6 +106,7 @@ export default {
           flags: MessageFlags.Ephemeral,
         });
       }
+
       if (command.NSFW && interaction.guild && !interaction.channel.nsfw) {
         return interaction.reply({
           embeds: [
@@ -93,6 +115,7 @@ export default {
           flags: MessageFlags.Ephemeral,
         });
       }
+
       if (command.PERMISSIONS?.length && interaction.guild) {
         const permCheck = checkPermissions(
           interaction.member,

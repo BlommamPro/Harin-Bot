@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { updateUserData } from '../../utils/guildData.js';
+import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -8,9 +8,7 @@ export default {
     .setDescription('Retira dinero del banco')
     .setDMPermission(false)
     .addStringOption(opt =>
-      opt.setName('cantidad')
-         .setDescription('Cantidad a retirar o "all" para todo')
-         .setRequired(true)
+      opt.setName('cantidad').setDescription('Cantidad a retirar o "all"').setRequired(true)
     ),
 
   PERMISSIONS: [],
@@ -21,38 +19,30 @@ export default {
 
   async execute(client, interaction, guildData, userData) {
     const input = interaction.options.getString('cantidad').toLowerCase().trim();
-    const currentBank = userData?.bank || 0;
+    const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
+    const currentBank = economy?.bank || 0;
 
     let amount = 0;
-
     if (input === 'all') {
       amount = currentBank;
     } else {
       amount = parseInt(input, 10);
       if (isNaN(amount) || amount <= 0) {
-        return interaction.reply({
-          embeds: [errorEmbed('Introduce una cantidad válida o `all`.')],
-          flags: MessageFlags.Ephemeral
-        });
+        return interaction.reply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')], flags: MessageFlags.Ephemeral });
       }
     }
 
     if (currentBank <= 0) {
-      return interaction.reply({
-        embeds: [errorEmbed('No tienes dinero en el banco.')],
-        flags: MessageFlags.Ephemeral
-      });
+      return interaction.reply({ embeds: [errorEmbed('No tienes dinero en el banco.')], flags: MessageFlags.Ephemeral });
     }
 
-    if (amount > currentBank) {
-      amount = currentBank;
-    }
+    if (amount > currentBank) amount = currentBank;
 
-    await updateUserData(interaction.user.id, {
+    await updateGuildEconomy(interaction.guildId, interaction.user.id, {
       $inc: { balance: amount, bank: -amount }
     });
 
-    const newWallet = (userData?.balance || 0) + amount;
+    const newWallet = (economy?.balance || 0) + amount;
     const newBank = currentBank - amount;
 
     const embed = successEmbed(
