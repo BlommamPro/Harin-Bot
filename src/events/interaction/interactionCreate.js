@@ -63,6 +63,20 @@ async function sendCommandErrorToSupport(interaction, error) {
   }
 }
 
+async function safeReply(interaction, payload) {
+  try {
+    if (interaction.deferred && !interaction.replied) {
+      return await interaction.editReply(payload);
+    } else if (interaction.replied) {
+      return await interaction.followUp(payload);
+    } else {
+      return await interaction.reply(payload);
+    }
+  } catch (err) {
+    logger.error('Error en safeReply:', err.message);
+  }
+}
+
 export default {
   name: "interactionCreate",
   once: false,
@@ -94,21 +108,21 @@ export default {
       if (!command) return;
 
       if (command.OWNER && !config.ownerIds.includes(interaction.user.id)) {
-        return interaction.reply({
+        return safeReply(interaction, {
           embeds: [errorEmbed("Solo los owners pueden usar este comando")],
           flags: MessageFlags.Ephemeral,
         });
       }
 
       if (command.GUILD_ONLY && !interaction.guild) {
-        return interaction.reply({
+        return safeReply(interaction, {
           embeds: [errorEmbed("Este comando solo se puede usar en servidores")],
           flags: MessageFlags.Ephemeral,
         });
       }
 
       if (command.NSFW && interaction.guild && !interaction.channel.nsfw) {
-        return interaction.reply({
+        return safeReply(interaction, {
           embeds: [
             errorEmbed("Este comando solo se puede usar en canales NSFW"),
           ],
@@ -122,7 +136,7 @@ export default {
           command.PERMISSIONS,
         );
         if (!permCheck.allowed) {
-          return interaction.reply({
+          return safeReply(interaction, {
             embeds: [
               errorEmbed(
                 `Necesitas los permisos: \`${permCheck.missing.join(", ")}\``,
@@ -139,7 +153,7 @@ export default {
           command.BOT_PERMISSIONS,
         );
         if (!botPermCheck.allowed) {
-          return interaction.reply({
+          return safeReply(interaction, {
             embeds: [
               errorEmbed(
                 `Necesito los permisos: \`${botPermCheck.missing.join(", ")}\``,
@@ -157,7 +171,7 @@ export default {
         command.COOLDOWN || 3,
       );
       if (onCooldown) {
-        return interaction.reply({
+        return safeReply(interaction, {
           embeds: [cooldownEmbed(timeLeft)],
           flags: MessageFlags.Ephemeral,
         });
@@ -187,18 +201,7 @@ export default {
           flags: MessageFlags.Ephemeral,
         };
 
-        try {
-          if (interaction.replied || interaction.deferred) {
-            await interaction.followUp(replyPayload);
-          } else {
-            await interaction.reply(replyPayload);
-          }
-        } catch (replyErr) {
-          logger.error(
-            `No pude responder al error de /${command.CMD.name}:`,
-            replyErr.message,
-          );
-        }
+        await safeReply(interaction, replyPayload);
       }
     } else if (interaction.isContextMenuCommand()) {
       const menu = client.contextMenus.get(interaction.commandName);
@@ -222,20 +225,10 @@ export default {
       } catch (err) {
         logger.error(`Error en context menu ${menu.CMD.name}:`, err);
         await sendCommandErrorToSupport(interaction, err);
-        try {
-          if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({
-              embeds: [errorEmbed("Error al ejecutar el menú contextual")],
-              flags: MessageFlags.Ephemeral,
-            });
-          } else {
-            await interaction.reply({
-              embeds: [errorEmbed("Error al ejecutar el menú contextual")],
-              flags: MessageFlags.Ephemeral,
-            });
-          }
-        } catch {
-        }
+        await safeReply(interaction, {
+          embeds: [errorEmbed("Error al ejecutar el menú contextual")],
+          flags: MessageFlags.Ephemeral,
+        });
       }
     } else if (interaction.isButton()) {
       await handleComponent(client, interaction, "buttons");
@@ -278,7 +271,7 @@ async function handleComponent(client, interaction, type) {
   }
 
   if (handler.OWNER && !config.ownerIds.includes(interaction.user.id)) {
-    return interaction.reply({
+    return safeReply(interaction, {
       embeds: [errorEmbed("Solo los owners pueden usar esto")],
       flags: MessageFlags.Ephemeral,
     });
@@ -287,7 +280,7 @@ async function handleComponent(client, interaction, type) {
   if (handler.PERMISSIONS?.length && interaction.guild) {
     const permCheck = checkPermissions(interaction.member, handler.PERMISSIONS);
     if (!permCheck.allowed) {
-      return interaction.reply({
+      return safeReply(interaction, {
         embeds: [
           errorEmbed(
             `Necesitas los permisos: \`${permCheck.missing.join(", ")}\``,
@@ -304,7 +297,7 @@ async function handleComponent(client, interaction, type) {
       handler.BOT_PERMISSIONS,
     );
     if (!botPermCheck.allowed) {
-      return interaction.reply({
+      return safeReply(interaction, {
         embeds: [
           errorEmbed(
             `Necesito los permisos: \`${botPermCheck.missing.join(", ")}\``,
@@ -322,7 +315,7 @@ async function handleComponent(client, interaction, type) {
     handler.COOLDOWN || 3,
   );
   if (onCooldown) {
-    return interaction.reply({
+    return safeReply(interaction, {
       embeds: [cooldownEmbed(timeLeft)],
       flags: MessageFlags.Ephemeral,
     });
@@ -348,17 +341,9 @@ async function handleComponent(client, interaction, type) {
   } catch (err) {
     logger.error(`Error en ${type} ${interaction.customId}:`, err);
     await sendCommandErrorToSupport(interaction, err);
-    const replyPayload = {
+    await safeReply(interaction, {
       embeds: [errorEmbed("Ocurrió un error")],
       flags: MessageFlags.Ephemeral,
-    };
-    try {
-      if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(replyPayload);
-      } else {
-        await interaction.reply(replyPayload);
-      }
-    } catch {
-    }
+    });
   }
 }

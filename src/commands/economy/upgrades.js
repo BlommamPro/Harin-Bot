@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { UPGRADES, getUpgradeLevel, getUpgradeCost } from '../../utils/economyConfig.js';
@@ -53,13 +53,13 @@ export default {
       await interaction.respond(choices);
     } catch (err) {
       console.error('Error en autocomplete de upgrades:', err);
-      try {
-        await interaction.respond([]);
-      } catch { /* ignorar */ }
+      try { await interaction.respond([]); } catch { /* ignorar */ }
     }
   },
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const sub = interaction.options.getSubcommand();
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
 
@@ -96,7 +96,7 @@ export default {
         }
       });
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     }
 
     if (sub === 'buy') {
@@ -104,29 +104,22 @@ export default {
       const config = UPGRADES[upgradeId];
 
       if (!config) {
-        return interaction.reply({
-          embeds: [errorEmbed('❌ Esa mejora no existe.')],
-          flags: MessageFlags.Ephemeral
-        });
+        return interaction.editReply({ embeds: [errorEmbed('❌ Esa mejora no existe.')] });
       }
 
       const currentLevel = getUpgradeLevel(economy.upgrades, upgradeId);
       if (currentLevel >= config.maxLevel) {
-        return interaction.reply({
-          embeds: [errorEmbed(`❌ Ya tienes **${config.name}** al nivel máximo.`)],
-          flags: MessageFlags.Ephemeral
-        });
+        return interaction.editReply({ embeds: [errorEmbed(`❌ Ya tienes **${config.name}** al nivel máximo.`)] });
       }
 
       const cost = getUpgradeCost(economy.upgrades, upgradeId);
       if ((economy.balance || 0) < cost) {
-        return interaction.reply({
+        return interaction.editReply({
           embeds: [errorEmbed(
             `❌ No tienes suficientes coins.\n` +
             `💰 Necesitas: **${cost}** coins\n` +
             `💵 Tienes: **${economy.balance}** coins`
-          )],
-          flags: MessageFlags.Ephemeral
+          )]
         });
       }
 
@@ -162,7 +155,7 @@ export default {
       );
       embed.setTitle('🎉 ¡Mejora Comprada!');
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     }
   }
 };

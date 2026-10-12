@@ -27,6 +27,8 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const target = interaction.options.getUser('usuario') || interaction.user;
     const data = await getGuildEconomy(interaction.guildId, target.id, target.username);
     const userDataGlobal = await getUserData(target.id, target.username);
@@ -61,6 +63,6 @@ export default {
       }
     });
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   }
 };

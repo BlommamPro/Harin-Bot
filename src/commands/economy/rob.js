@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
@@ -24,16 +24,20 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) return interaction.reply(economyDisabled);
+    if (economyDisabled) {
+      return interaction.editReply({ embeds: economyDisabled.embeds });
+    }
 
     const target = interaction.options.getUser('usuario');
 
     if (target.id === interaction.user.id) {
-      return interaction.reply({ embeds: [errorEmbed('No puedes robarte a ti mismo.')], flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ embeds: [errorEmbed('No puedes robarte a ti mismo.')] });
     }
     if (target.bot) {
-      return interaction.reply({ embeds: [errorEmbed('No puedes robarle a un bot.')], flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ embeds: [errorEmbed('No puedes robarle a un bot.')] });
     }
 
     const config = await getEconomyConfig(interaction.guildId);
@@ -41,18 +45,16 @@ export default {
 
     const cd = await checkDbCooldown(interaction.user.id, `rob_${interaction.guildId}`, config.robCooldownMinutes);
     if (cd.onCooldown) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [errorEmbed(`La policía te tiene en la mira. Vuelve <t:${cd.nextTimestamp}:R>.`)],
-        flags: MessageFlags.Ephemeral
       });
     }
 
     const targetEconomy = await getGuildEconomy(interaction.guildId, target.id, target.username);
 
     if ((targetEconomy.balance || 0) < 50) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [errorEmbed(`${target.username} no tiene suficiente dinero para robarle.`)],
-        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -86,7 +88,7 @@ export default {
         });
       }
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     } else {
       const fine = Math.floor((economy.balance || 0) * 0.05);
 
@@ -96,7 +98,7 @@ export default {
       const embed = errorEmbed(`**${target.username}** te descubrió y llamó a la policía. Pagaste **${fine} coins** de multa.`);
       embed.setTitle('👮 ¡Te Atraparon!');
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     }
   }
 };

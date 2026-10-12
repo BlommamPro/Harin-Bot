@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getGuildEconomy, updateGuildEconomy, getUserData } from '../../utils/guildData.js';
 import { getUpgradeEffect } from '../../utils/economyConfig.js';
@@ -25,6 +25,8 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const input = interaction.options.getString('cantidad').toLowerCase().trim();
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
     const globalUser = await getUserData(interaction.user.id);
@@ -40,26 +42,25 @@ export default {
     } else {
       amount = parseInt(input, 10);
       if (isNaN(amount) || amount <= 0) {
-        return interaction.reply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')], flags: MessageFlags.Ephemeral });
+        return interaction.editReply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')] });
       }
     }
 
     if (currentWallet <= 0) {
-      return interaction.reply({ embeds: [errorEmbed('No tienes dinero en mano para depositar.')], flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ embeds: [errorEmbed('No tienes dinero en mano para depositar.')] });
     }
 
     if (amount >= currentWallet) {
       amount = currentWallet - 1;
       if (amount <= 0) {
-        return interaction.reply({ embeds: [errorEmbed('Debes dejar al menos **1 coin** en mano.')], flags: MessageFlags.Ephemeral });
+        return interaction.editReply({ embeds: [errorEmbed('Debes dejar al menos **1 coin** en mano.')] });
       }
     }
 
     const spaceLeft = maxCapacity - currentBank;
     if (spaceLeft <= 0) {
-      return interaction.reply({
-        embeds: [errorEmbed(`Tu banco está lleno. Capacidad: **${maxCapacity}** (Nivel ${userLevel}).`)],
-        flags: MessageFlags.Ephemeral
+      return interaction.editReply({
+        embeds: [errorEmbed(`Tu banco está lleno. Capacidad: **${maxCapacity}** (Nivel ${userLevel}).`)]
       });
     }
 
@@ -80,6 +81,6 @@ export default {
     );
     embed.setTitle('🏦 Depósito Exitoso');
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   }
 };

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 
@@ -18,6 +18,8 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const input = interaction.options.getString('cantidad').toLowerCase().trim();
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
     const currentBank = economy?.bank || 0;
@@ -28,12 +30,12 @@ export default {
     } else {
       amount = parseInt(input, 10);
       if (isNaN(amount) || amount <= 0) {
-        return interaction.reply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')], flags: MessageFlags.Ephemeral });
+        return interaction.editReply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')] });
       }
     }
 
     if (currentBank <= 0) {
-      return interaction.reply({ embeds: [errorEmbed('No tienes dinero en el banco.')], flags: MessageFlags.Ephemeral });
+      return interaction.editReply({ embeds: [errorEmbed('No tienes dinero en el banco.')] });
     }
 
     if (amount > currentBank) amount = currentBank;
@@ -53,6 +55,6 @@ export default {
     );
     embed.setTitle('🏦 Retiro Exitoso');
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   }
 };

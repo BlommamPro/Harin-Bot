@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
@@ -7,6 +7,7 @@ import { applyWorkBonus } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { emojis } from '../../utils/emojis.js';
 
 const JOBS = [
   { name: 'desarrollador de software', description: 'trabajaste en una startup tecnológica', emoji: '💻' },
@@ -34,17 +35,20 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) return interaction.reply(economyDisabled);
+    if (economyDisabled) {
+      return interaction.editReply({ embeds: economyDisabled.embeds });
+    }
 
     const config = await getEconomyConfig(interaction.guildId);
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
 
     const cd = await checkDbCooldown(interaction.user.id, `work_${interaction.guildId}`, config.workCooldownMinutes);
     if (cd.onCooldown) {
-      return interaction.reply({
-        embeds: [errorEmbed(`⏳ Ya trabajaste recientemente. Vuelve <t:${cd.nextTimestamp}:R>.`)],
-        flags: MessageFlags.Ephemeral
+      return interaction.editReply({
+        embeds: [errorEmbed(`${emojis.timersand} Ya trabajaste recientemente. Vuelve <t:${cd.nextTimestamp}:R>.`)],
       });
     }
 
@@ -93,6 +97,6 @@ export default {
       });
     }
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   }
 };

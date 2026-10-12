@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
@@ -34,40 +34,34 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) return interaction.reply(economyDisabled);
+    if (economyDisabled) {
+      return interaction.editReply({ embeds: economyDisabled.embeds });
+    }
 
     const amount = interaction.options.getInteger('cantidad');
     const config = await getEconomyConfig(interaction.guildId);
 
     if (amount < config.minBet) {
-      return interaction.reply({
-        embeds: [errorEmbed(`La apuesta mínima es **${config.minBet}** coins.`)],
-        flags: MessageFlags.Ephemeral
-      });
+      return interaction.editReply({ embeds: [errorEmbed(`La apuesta mínima es **${config.minBet}** coins.`)] });
     }
     if (amount > config.maxBet) {
-      return interaction.reply({
-        embeds: [errorEmbed(`La apuesta máxima es **${config.maxBet}** coins.`)],
-        flags: MessageFlags.Ephemeral
-      });
+      return interaction.editReply({ embeds: [errorEmbed(`La apuesta máxima es **${config.maxBet}** coins.`)] });
     }
 
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
 
     if ((economy?.balance || 0) < amount) {
-      return interaction.reply({
-        embeds: [errorEmbed(`No tienes suficientes coins. Tienes **${economy.balance}** y apostaste **${amount}**.`)],
-        flags: MessageFlags.Ephemeral
+      return interaction.editReply({
+        embeds: [errorEmbed(`No tienes suficientes coins. Tienes **${economy.balance}** y apostaste **${amount}**.`)]
       });
     }
 
     const cd = await checkDbCooldown(interaction.user.id, `slots_${interaction.guildId}`, config.slotsCooldownSeconds / 60);
     if (cd.onCooldown) {
-      return interaction.reply({
-        embeds: [errorEmbed(`La máquina se está enfriando. Vuelve <t:${cd.nextTimestamp}:R>.`)],
-        flags: MessageFlags.Ephemeral
-      });
+      return interaction.editReply({ embeds: [errorEmbed(`La máquina se está enfriando. Vuelve <t:${cd.nextTimestamp}:R>.`)] });
     }
 
     await setDbCooldown(interaction.user.id, `slots_${interaction.guildId}`);
@@ -127,6 +121,6 @@ export default {
       });
     }
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   }
 };
