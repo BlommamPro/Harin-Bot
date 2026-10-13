@@ -6,7 +6,7 @@ import {
   MessageFlags,
   ComponentType,
 } from "discord.js";
-import { createEmbed, successEmbed, errorEmbed } from "../../utils/embeds.js";
+import { createEmbed, errorEmbed } from "../../utils/embeds.js";
 import { getGuildEconomy, updateGuildEconomy } from "../../utils/guildData.js";
 import { checkDbCooldown, setDbCooldown } from "../../utils/economyCooldowns.js";
 import { applyBetLuck } from "../../utils/applyUpgrades.js";
@@ -81,22 +81,24 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) return interaction.reply(economyDisabled);
+    if (economyDisabled) {
+      return interaction.editReply({ embeds: economyDisabled.embeds });
+    }
 
     const amount = interaction.options.getInteger("cantidad");
     const config = await getEconomyConfig(interaction.guildId);
 
     if (amount < config.minBet) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [errorEmbed(`La apuesta mínima es **${config.minBet}** coins.`)],
-        flags: MessageFlags.Ephemeral,
       });
     }
     if (amount > config.maxBet) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [errorEmbed(`La apuesta máxima es **${config.maxBet}** coins.`)],
-        flags: MessageFlags.Ephemeral,
       });
     }
 
@@ -104,9 +106,8 @@ export default {
     const wallet = economy?.balance || 0;
 
     if (wallet < amount) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [errorEmbed(`No tienes suficientes coins. Tienes **${wallet}** y apostaste **${amount}**.`)],
-        flags: MessageFlags.Ephemeral,
       });
     }
 
@@ -114,9 +115,8 @@ export default {
 
     const cd = await checkDbCooldown(interaction.user.id, `blackjack_${interaction.guildId}`, config.blackjackCooldownSeconds / 60);
     if (cd.onCooldown) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [errorEmbed(`Espera un momento. <t:${cd.nextTimestamp}:R>.`)],
-        flags: MessageFlags.Ephemeral,
       });
     }
 
@@ -153,7 +153,7 @@ export default {
         ],
       });
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     }
 
     if (isBlackjack(dealerHand)) {
@@ -167,7 +167,7 @@ export default {
         ],
       });
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     }
 
     const gameId = Date.now().toString(36);
@@ -201,8 +201,7 @@ export default {
       return row;
     };
 
-    await interaction.reply({ embeds: [generateEmbed()], components: [generateButtons(true)] });
-    const msg = await interaction.fetchReply();
+    const msg = await interaction.editReply({ embeds: [generateEmbed()], components: [generateButtons(true)] });
 
     const collector = msg.createMessageComponentCollector({
       componentType: ComponentType.Button,

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
@@ -48,17 +48,20 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) return interaction.reply(economyDisabled);
+    if (economyDisabled) {
+      return interaction.editReply({ embeds: economyDisabled.embeds });
+    }
 
     const config = await getEconomyConfig(interaction.guildId);
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
 
     const cd = await checkDbCooldown(interaction.user.id, `crime_${interaction.guildId}`, config.crimeCooldownMinutes);
     if (cd.onCooldown) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [errorEmbed(`👮 La policía te vigila. Vuelve <t:${cd.nextTimestamp}:R>.`)],
-        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -93,7 +96,7 @@ export default {
         });
       }
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     } else {
       const fine = Math.min(Math.floor((economy.balance || 0) * 0.1), crime.failPenalty);
       const failMessage = FAIL_MESSAGES[Math.floor(Math.random() * FAIL_MESSAGES.length)];
@@ -107,7 +110,7 @@ export default {
       );
       embed.setTitle('👮 ¡Te Atraparon!');
 
-      return interaction.reply({ embeds: [embed] });
+      return interaction.editReply({ embeds: [embed] });
     }
   }
 };

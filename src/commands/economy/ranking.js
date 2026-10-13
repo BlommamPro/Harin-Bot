@@ -24,6 +24,8 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const weekStart = getWeekStart();
 
     const top = await WeeklyRanking.find({
@@ -34,7 +36,7 @@ export default {
       .limit(10);
 
     if (top.length === 0) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [createEmbed({
           color: COLORS.INFO,
           title: '📅 Ranking Semanal',
@@ -70,6 +72,6 @@ export default {
       }
     });
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   }
 };

@@ -25,6 +25,8 @@ export default {
   GUILD_ONLY: true,
 
   async execute(client, interaction, guildData, userData) {
+    await interaction.deferReply();
+
     const type = interaction.options.getString('tipo') || 'total';
 
     let sortField = { totalWealth: -1 };
@@ -48,7 +50,7 @@ export default {
     const top = await GuildEconomy.aggregate(pipeline);
 
     if (top.length === 0) {
-      return interaction.reply({
+      return interaction.editReply({
         embeds: [createEmbed({
           color: COLORS.INFO,
           title: `🏆 Top ${titleSuffix} — ${interaction.guild.name}`,
@@ -78,6 +80,6 @@ export default {
       }
     });
 
-    await interaction.reply({ embeds: [embed] });
+    return interaction.editReply({ embeds: [embed] });
   }
 };
