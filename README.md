@@ -7,7 +7,7 @@ Un bot de Discord modular y completo construido con **Discord.js v14** y **Mongo
 ## 📋 Tabla de Contenidos
 
 - [Características Principales](#-características-principales)
-- [Tecnologías Utilizadas](#-tecnologías-utilizadas)
+- [Tecnologías Utilizadas](#%EF%B8%8F-tecnologías-utilizadas)
 - [Instalación y Configuración](#-instalación-y-configuración)
 - [Scripts de Arranque y Comandos](#-scripts-de-arranque-y-comandos)
 - [Estructura del Proyecto](#-estructura-del-proyecto)
