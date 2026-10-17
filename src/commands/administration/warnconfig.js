@@ -1,21 +1,20 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { getWarnConfig, updateWarnConfig } from '../../utils/warns.js';
-import { emojis } from '../../utils/emojis.js';
 
 export default {
   CMD: new SlashCommandBuilder()
     .setName('warnconfig')
-    .setDescription('⚙️ Configura el sistema de warns del servidor')
+    .setDescription('Configura el sistema de warns del servidor')
     .setDMPermission(false)
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand(sub =>
       sub.setName('view')
-         .setDescription('📋 Ver configuración actual')
+         .setDescription('Ver configuración actual')
     )
     .addSubcommand(sub =>
       sub.setName('add')
-         .setDescription('➕ Añadir acción automática')
+         .setDescription('Añadir acción automática')
          .addIntegerOption(opt =>
            opt.setName('warns')
               .setDescription('Cantidad de warns para activar')
@@ -44,7 +43,7 @@ export default {
     )
     .addSubcommand(sub =>
       sub.setName('remove')
-         .setDescription('➖ Quitar una acción automática')
+         .setDescription('Quitar una acción automática')
          .addIntegerOption(opt =>
            opt.setName('warns')
               .setDescription('Cantidad de warns de la acción a quitar')
@@ -53,10 +52,10 @@ export default {
     )
     .addSubcommand(sub =>
       sub.setName('dm')
-         .setDescription('📨 Activar/desactivar DM al usuario warnado')
+         .setDescription('Activar o desactivar el DM al usuario advertido')
          .addBooleanOption(opt =>
            opt.setName('activar')
-              .setDescription('¿Enviar DM?')
+              .setDescription('¿Enviar mensaje directo?')
               .setRequired(true)
          )
     ),
@@ -76,21 +75,21 @@ export default {
       const actionsText = config.actions.length
         ? config.actions.map(a => {
             let text = `**${a.warns} warns** → ${a.action.toUpperCase()}`;
-            if (a.action === 'timeout' && a.duration) text += ` (${a.duration}min)`;
+            if (a.action === 'timeout' && a.duration) text += ` (${a.duration} min)`;
             return text;
           }).join('\n')
         : 'Sin acciones configuradas.';
 
       const embed = createEmbed({
         color: COLORS.INFO,
-        title: '⚙️ Configuración de Warns',
+        title: 'Configuración de warns',
         fields: [
-          { name: '📋 Acciones Automáticas', value: actionsText, inline: false },
-          { name: '📨 Enviar DM', value: config.dmUser ? '✅ Sí' : '❌ No', inline: true },
-          { name: '🔢 Max Warns', value: `\`${config.maxWarns}\``, inline: true }
+          { name: 'Acciones automáticas', value: actionsText, inline: false },
+          { name: 'Enviar DM al advertido', value: config.dmUser ? 'Sí' : 'No', inline: true },
+          { name: 'Máximo de warns', value: `${config.maxWarns}`, inline: true }
         ],
         footer: {
-          text: `Usa /warnconfig add para añadir acciones`,
+          text: `Solicitado por ${interaction.user.username}`,
           icon: interaction.user.displayAvatarURL()
         }
       });
@@ -118,7 +117,7 @@ export default {
 
       await updateWarnConfig(interaction.guildId, { actions: config.actions });
 
-      let desc = `✅ Cuando un usuario llegue a **${warns} warns**, se ejecutará: **${action.toUpperCase()}**`;
+      let desc = `Cuando un usuario llegue a **${warns} warns**, se ejecutará: **${action.toUpperCase()}**`;
       if (action === 'timeout') desc += ` por **${duration} minutos**`;
 
       return interaction.reply({ embeds: [successEmbed(desc)] });
@@ -133,14 +132,14 @@ export default {
 
       if (config.actions.length === before) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No hay acción configurada para ${warns} warns.`)],
+          embeds: [errorEmbed(`No hay una acción configurada para ${warns} warns.`)],
           flags: MessageFlags.Ephemeral
         });
       }
 
       await updateWarnConfig(interaction.guildId, { actions: config.actions });
       return interaction.reply({
-        embeds: [successEmbed(`✅ Acción para ${warns} warns eliminada.`)]
+        embeds: [successEmbed(`Acción para ${warns} warns eliminada.`)]
       });
     }
 
@@ -149,7 +148,7 @@ export default {
       await updateWarnConfig(interaction.guildId, { dmUser: enable });
       return interaction.reply({
         embeds: [successEmbed(
-          `📨 DM al usuario warnado: ${enable ? `${emojis.a_on} Activado` : `${emojis.a_off} Desactivado`}`
+          `DM al usuario advertido: ${enable ? 'activado' : 'desactivado'}`
         )]
       });
     }

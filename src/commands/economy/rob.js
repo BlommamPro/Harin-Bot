@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
+import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
@@ -23,13 +24,11 @@ export default {
   COOLDOWN: 0,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) {
-      return interaction.editReply({ embeds: economyDisabled.embeds });
-    }
+    if (economyDisabled) return interaction.editReply({ embeds: economyDisabled.embeds });
 
     const target = interaction.options.getUser('usuario');
 
@@ -46,7 +45,7 @@ export default {
     const cd = await checkDbCooldown(interaction.user.id, `rob_${interaction.guildId}`, config.robCooldownMinutes);
     if (cd.onCooldown) {
       return interaction.editReply({
-        embeds: [errorEmbed(`La policía te tiene en la mira. Vuelve <t:${cd.nextTimestamp}:R>.`)],
+        embeds: [errorEmbed(`La policía te está buscando. Vuelve <t:${cd.nextTimestamp}:R>.`)],
       });
     }
 
@@ -54,7 +53,7 @@ export default {
 
     if ((targetEconomy.balance || 0) < 50) {
       return interaction.editReply({
-        embeds: [errorEmbed(`${target.username} no tiene suficiente dinero para robarle.`)],
+        embeds: [errorEmbed(`${target.username} no tiene suficiente dinero para que valga la pena robarle.`)],
       });
     }
 
@@ -67,10 +66,10 @@ export default {
       const stolen = applyPetBonus(baseStolen, economy.upgrades);
 
       await updateGuildEconomy(interaction.guildId, interaction.user.id, {
-        $inc: { balance: stolen, robs: 1 }
+        $inc: { balance: stolen, robs: 1 },
       });
       await updateGuildEconomy(interaction.guildId, target.id, {
-        $inc: { balance: -stolen }
+        $inc: { balance: -stolen },
       });
       await setDbCooldown(interaction.user.id, `rob_${interaction.guildId}`);
       await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, stolen);
@@ -78,27 +77,40 @@ export default {
       const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
       const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
-      const embed = successEmbed(`Le robaste **${stolen} coins** a **${target.username}**!`);
-      embed.setTitle('🥷 Robo Exitoso');
+      const lines = [
+        header('🥷', 'Robo exitoso'),
+        block([
+          kv('Víctima', target.username),
+          kv('Robado', `\`${formatNumber(stolen)} coins\``),
+          kv('Robos exitosos', `\`${updatedEconomy.robs}\``),
+          kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
+        ]),
+      ];
 
       if (newAchievements.length > 0) {
-        embed.addFields({
-          name: '🏆 ¡Nuevos logros!',
-          value: newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n')
-        });
+        lines.push('', header('🏆', 'Logros desbloqueados'));
+        lines.push(newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'));
       }
 
-      return interaction.editReply({ embeds: [embed] });
-    } else {
-      const fine = Math.floor((economy.balance || 0) * 0.05);
-
-      await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -fine } });
-      await setDbCooldown(interaction.user.id, `rob_${interaction.guildId}`);
-
-      const embed = errorEmbed(`**${target.username}** te descubrió y llamó a la policía. Pagaste **${fine} coins** de multa.`);
-      embed.setTitle('👮 ¡Te Atraparon!');
-
+      const embed = successEmbed(lines.join('\n'));
       return interaction.editReply({ embeds: [embed] });
     }
-  }
+
+    const fine = Math.floor((economy.balance || 0) * 0.05);
+
+    await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -fine } });
+    await setDbCooldown(interaction.user.id, `rob_${interaction.guildId}`);
+
+    const lines = [
+      header('🚔', 'Te atraparon'),
+      block([
+        kv('Víctima', target.username),
+        kv('Motivo', 'Te descubrieron y llamaron a la policía'),
+        kv('Multa', `\`${formatNumber(fine)} coins\``),
+      ]),
+    ];
+
+    const embed = errorEmbed(lines.join('\n'));
+    return interaction.editReply({ embeds: [embed] });
+  },
 };

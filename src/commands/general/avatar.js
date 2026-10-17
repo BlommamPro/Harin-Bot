@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
+import { header, block, kv } from '../../utils/embedDecorations.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -17,19 +18,26 @@ export default {
   COOLDOWN: 3,
   GUILD_ONLY: false,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const target = interaction.options.getUser('usuario') || interaction.user;
+    const isSelf = target.id === interaction.user.id;
+
+    const description = block([
+      kv('Usuario', target.tag),
+      kv('ID', `\`${target.id}\``),
+    ]);
 
     const embed = createEmbed({
       color: COLORS.GENERAL,
-      title: `🖼️ Avatar de ${target.username}`,
+      title: isSelf ? '🖼️ Tu avatar' : `🖼️ Avatar de ${target.username}`,
+      description,
       image: { url: target.displayAvatarURL({ size: 4096, dynamic: true }) },
       footer: {
         text: `Solicitado por ${interaction.user.username}`,
-        icon: interaction.user.displayAvatarURL()
-      }
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     await interaction.reply({ embeds: [embed] });
-  }
+  },
 };

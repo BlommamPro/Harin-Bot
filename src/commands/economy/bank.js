@@ -1,6 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
-import { getGuildEconomy, getUserData } from '../../utils/guildData.js';
+import { header, block, kv, createProgressBar, formatNumber } from '../../utils/embedDecorations.js';
+import { getGuildEconomy } from '../../utils/guildData.js';
+import { getGuildLevel } from '../../utils/levelSystem.js';
 import { getUpgradeEffect } from '../../utils/economyConfig.js';
 
 function getBankCapacity(level, upgrades) {
@@ -26,43 +28,46 @@ export default {
   COOLDOWN: 3,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const target = interaction.options.getUser('usuario') || interaction.user;
     const data = await getGuildEconomy(interaction.guildId, target.id, target.username);
-    const userDataGlobal = await getUserData(target.id, target.username);
+
+    const guildLevelData = await getGuildLevel(interaction.guildId, target.id);
+    const level = guildLevelData.level || 1;
 
     const wallet = data?.balance || 0;
     const bank = data?.bank || 0;
     const total = wallet + bank;
-    const level = userDataGlobal?.level || 1;
     const maxCapacity = getBankCapacity(level, data.upgrades);
-    const percentUsed = Math.round((bank / maxCapacity) * 100);
+    const bar = createProgressBar(bank, maxCapacity, 14);
+    const pct = maxCapacity > 0 ? Math.round((bank / maxCapacity) * 100) : 0;
 
-    const filled = Math.round((bank / maxCapacity) * 10);
-    const progressBar = '█'.repeat(filled) + '░'.repeat(10 - filled);
+    const description = [
+      header('💰', 'Balance'),
+      block([
+        kv('En mano', `\`${formatNumber(wallet)} coins\``),
+        kv('Banco', `\`${formatNumber(bank)} / ${formatNumber(maxCapacity)}\``),
+        kv('Total', `\`${formatNumber(total)} coins\``),
+      ]),
+      '',
+      header('🏦', 'Capacidad del banco'),
+      `\`${bar}\` **${pct}%**`,
+      `-# Nivel del servidor: **${level}** · La mejora \`better_bank\` multiplica la capacidad`,
+    ].join('\n');
 
     const embed = createEmbed({
       color: COLORS.ECONOMY,
-      title: `🏦 Balance de ${target.username}`,
+      title: `💰 ${target.username}`,
       thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
-      description: [
-        `💰 **En Mano:** ${wallet} coins`,
-        `🏦 **Banco:** ${bank} / ${maxCapacity} coins`,
-        `📊 **Total:** ${total} coins`,
-        '',
-        `📈 **Capacidad:** \`${progressBar}\` ${percentUsed}%`,
-        `⭐ **Nivel:** ${level}`,
-        '',
-        `> 💡 Este balance es **solo de este servidor**.`
-      ].join('\n'),
+      description,
       footer: {
         text: `Solicitado por ${interaction.user.username}`,
-        icon: interaction.user.displayAvatarURL()
-      }
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     return interaction.editReply({ embeds: [embed] });
-  }
+  },
 };

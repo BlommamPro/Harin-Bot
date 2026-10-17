@@ -17,7 +17,7 @@ export function createEmbed(options = {}) {
     embed.setAuthor({
       name: options.author.name,
       iconURL: options.author.icon,
-      url: options.author.url
+      url: options.author.url,
     });
   }
 
@@ -28,36 +28,33 @@ export function createEmbed(options = {}) {
   if (options.fields) {
     const fields = options.fields.slice(0, 25);
     for (let i = 0; i < fields.length; i += 3) {
-      const group = fields.slice(i, i + 3);
-      embed.addFields(group);
+      embed.addFields(fields.slice(i, i + 3));
     }
   }
 
   if (options.thumbnail) {
     embed.setThumbnail(
-      typeof options.thumbnail === 'string' 
-        ? options.thumbnail 
+      typeof options.thumbnail === 'string'
+        ? options.thumbnail
         : options.thumbnail.url
     );
   }
 
   if (options.image) {
     embed.setImage(
-      typeof options.image === 'string' 
-        ? options.image 
-        : options.image.url
+      typeof options.image === 'string' ? options.image : options.image.url
     );
   }
 
   if (options.footer) {
     embed.setFooter({
       text: options.footer.text,
-      iconURL: options.footer.icon || BRANDING.LOGO_URL
+      iconURL: options.footer.icon || BRANDING.LOGO_URL,
     });
   } else {
-    embed.setFooter({ 
-      text: '✦',
-      iconURL: BRANDING.LOGO_URL
+    embed.setFooter({
+      text: BRANDING.FOOTER_TEXT,
+      iconURL: BRANDING.LOGO_URL,
     });
   }
 
@@ -68,13 +65,11 @@ export function createEmbed(options = {}) {
   return embed;
 }
 
-// ===== EMBEDS PREDEFINIDOS =====
-
 export function successEmbed(description, title = `${EMOJIS.SUCCESS} Éxito`) {
   return createEmbed({
     color: COLORS.SUCCESS,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.SUCCESS,
   });
 }
@@ -82,8 +77,8 @@ export function successEmbed(description, title = `${EMOJIS.SUCCESS} Éxito`) {
 export function errorEmbed(description, title = `${EMOJIS.ERROR} Error`) {
   return createEmbed({
     color: COLORS.ERROR,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.ERROR,
   });
 }
@@ -91,8 +86,8 @@ export function errorEmbed(description, title = `${EMOJIS.ERROR} Error`) {
 export function warningEmbed(description, title = `${EMOJIS.WARNING} Advertencia`) {
   return createEmbed({
     color: COLORS.WARNING,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.WARNING,
   });
 }
@@ -100,8 +95,8 @@ export function warningEmbed(description, title = `${EMOJIS.WARNING} Advertencia
 export function infoEmbed(description, title = `${EMOJIS.INFO} Información`) {
   return createEmbed({
     color: COLORS.INFO,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.INFO,
   });
 }
@@ -109,8 +104,8 @@ export function infoEmbed(description, title = `${EMOJIS.INFO} Información`) {
 export function economyEmbed(description, title = `${EMOJIS.ECONOMY} Economía`) {
   return createEmbed({
     color: COLORS.ECONOMY,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.ECONOMY,
   });
 }
@@ -118,8 +113,8 @@ export function economyEmbed(description, title = `${EMOJIS.ECONOMY} Economía`)
 export function levelEmbed(description, title = `${EMOJIS.LEVELING} Niveles`) {
   return createEmbed({
     color: COLORS.LEVELING,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.LEVELING,
   });
 }
@@ -127,8 +122,8 @@ export function levelEmbed(description, title = `${EMOJIS.LEVELING} Niveles`) {
 export function moderationEmbed(description, title = `${EMOJIS.MODERATION} Moderación`) {
   return createEmbed({
     color: COLORS.MODERATION,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.MODERATION,
   });
 }
@@ -136,26 +131,34 @@ export function moderationEmbed(description, title = `${EMOJIS.MODERATION} Moder
 export function giveawayEmbed(description, title = `${EMOJIS.GIVEAWAY} Sorteo`) {
   return createEmbed({
     color: COLORS.GIVEAWAY,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.GIVEAWAY,
+  });
+}
+
+export function ownerEmbed(description, title = `${EMOJIS.OWNER} Panel de Owner`) {
+  return createEmbed({
+    color: COLORS.OWNER,
+    title,
+    description,
   });
 }
 
 export function cooldownEmbed(timeLeft) {
   return createEmbed({
-    color: config.cooldownColor || 0xFEE75C,
+    color: config.cooldownColor || COLORS.WARNING,
     title: `${EMOJIS.TIMER} En cooldown`,
-    description: `${EMOJIS.TIMER} Espera **${timeLeft}** segundos antes de usar esto.`,
+    description: `${EMOJIS.TIMER} Espera **${timeLeft}** segundos antes de volver a usar esto.`,
     thumbnail: ICONS.WARNING,
   });
 }
 
-export function clearEmbed(description, title = `${EMOJIS.CLEAR} Mensajes Borrados`) {
+export function clearEmbed(description, title = `${EMOJIS.CLEAR} Mensajes borrados`) {
   return createEmbed({
     color: COLORS.SUCCESS,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.CLEAR,
   });
 }
@@ -163,8 +166,8 @@ export function clearEmbed(description, title = `${EMOJIS.CLEAR} Mensajes Borrad
 export function bankEmbed(description, title = `${EMOJIS.BANK} Banco`) {
   return createEmbed({
     color: COLORS.ECONOMY,
-    title: title,
-    description: description,
+    title,
+    description,
     thumbnail: ICONS.ECONOMY,
   });
 }

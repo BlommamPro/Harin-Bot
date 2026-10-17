@@ -12,18 +12,17 @@ import {
 } from "../../utils/embeds.js";
 import { LevelConfig } from "../../models/LevelConfig.js";
 import { GuildLevel } from "../../models/GuildLevel.js";
-import { emojis } from "../../utils/emojis.js";
 
 export default {
   CMD: new SlashCommandBuilder()
     .setName("levelconfig")
-    .setDescription("⚙️ Configura el sistema de niveles del servidor")
+    .setDescription("Configura el sistema de niveles del servidor")
     .setDMPermission(false)
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
     .addSubcommand((sub) =>
       sub
         .setName("enable")
-        .setDescription("🔧 Activar o desactivar el sistema de niveles")
+        .setDescription("Activar o desactivar el sistema de niveles")
         .addBooleanOption((opt) =>
           opt
             .setName("estado")
@@ -34,7 +33,7 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("role")
-        .setDescription("🎭 Dar un rol al subir de nivel")
+        .setDescription("Dar un rol al subir de nivel")
         .addIntegerOption((opt) =>
           opt
             .setName("nivel")
@@ -49,7 +48,7 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("removerole")
-        .setDescription("🗑️ Quitar rol de un nivel")
+        .setDescription("Quitar rol de un nivel")
         .addIntegerOption((opt) =>
           opt.setName("nivel").setDescription("Nivel").setRequired(true),
         ),
@@ -57,7 +56,7 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("channel")
-        .setDescription("📢 Configurar canal de anuncios de nivel")
+        .setDescription("Configurar canal de anuncios de nivel")
         .addChannelOption((opt) =>
           opt
             .setName("canal")
@@ -69,13 +68,11 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("message")
-        .setDescription("📝 Personalizar mensaje de subida de nivel")
+        .setDescription("Personalizar mensaje de subida de nivel")
         .addStringOption((opt) =>
           opt
             .setName("texto")
-            .setDescription(
-              "Mensaje (usa {user} para el usuario, {level} para el nivel)",
-            )
+            .setDescription("Mensaje (usa {user} para el usuario, {level} para el nivel)")
             .setRequired(true)
             .setMaxLength(200),
         ),
@@ -83,7 +80,7 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("ignore")
-        .setDescription("🚫 Excluir un canal de la obtención de XP")
+        .setDescription("Excluir un canal de la obtención de XP")
         .addChannelOption((opt) =>
           opt
             .setName("canal")
@@ -95,7 +92,7 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("unignore")
-        .setDescription("✅ Dejar de excluir un canal de la obtención de XP")
+        .setDescription("Dejar de excluir un canal de la obtención de XP")
         .addChannelOption((opt) =>
           opt
             .setName("canal")
@@ -107,20 +104,16 @@ export default {
     .addSubcommand((sub) =>
       sub
         .setName("reset")
-        .setDescription(
-          "🔄 Reiniciar niveles de un usuario o todos (SOLO EN ESTE SERVIDOR)",
-        )
+        .setDescription("Reiniciar niveles de un usuario o todos (solo en este servidor)")
         .addUserOption((opt) =>
           opt
             .setName("usuario")
-            .setDescription(
-              "Usuario a reiniciar (dejar vacío para TODOS en este servidor)",
-            )
+            .setDescription("Usuario a reiniciar (dejar vacío para TODOS en este servidor)")
             .setRequired(false),
         ),
     )
     .addSubcommand((sub) =>
-      sub.setName("view").setDescription("📋 Ver configuración actual"),
+      sub.setName("view").setDescription("Ver configuración actual"),
     ),
 
   PERMISSIONS: ["Administrator"],
@@ -143,7 +136,7 @@ export default {
       return interaction.reply({
         embeds: [
           successEmbed(
-            `✅ Sistema de niveles: ${enable ? `${emojis.a_on} Activado` : `${emojis.a_off} Desactivado`}`,
+            `Sistema de niveles: ${enable ? 'activado' : 'desactivado'}`,
           ),
         ],
       });
@@ -155,18 +148,16 @@ export default {
 
       if (!interaction.guild.members.me.permissions.has("ManageRoles")) {
         return interaction.reply({
-          embeds: [errorEmbed("❌ No tengo permiso para gestionar roles.")],
+          embeds: [errorEmbed("No tengo permiso para gestionar roles.")],
           flags: MessageFlags.Ephemeral,
         });
       }
 
-      if (
-        role.position >= interaction.guild.members.me.roles.highest.position
-      ) {
+      if (role.position >= interaction.guild.members.me.roles.highest.position) {
         return interaction.reply({
           embeds: [
             errorEmbed(
-              `❌ El rol ${role} está por encima de mi rol más alto. No puedo asignarlo.`,
+              `El rol ${role} está por encima de mi rol más alto. No puedo asignarlo.`,
             ),
           ],
           flags: MessageFlags.Ephemeral,
@@ -187,7 +178,7 @@ export default {
       return interaction.reply({
         embeds: [
           successEmbed(
-            `✅ Al llegar al nivel **${level}** se dará el rol ${role}.`,
+            `Al llegar al nivel **${level}** se dará el rol ${role}.`,
           ),
         ],
       });
@@ -201,7 +192,7 @@ export default {
         { $pull: { roles: { level } } },
       );
       return interaction.reply({
-        embeds: [successEmbed(`✅ Rol del nivel **${level}** eliminado.`)],
+        embeds: [successEmbed(`Rol del nivel **${level}** eliminado.`)],
       });
     }
 
@@ -213,7 +204,7 @@ export default {
         return interaction.reply({
           embeds: [
             errorEmbed(
-              `❌ No tengo permisos para enviar mensajes o embeds en ${channel}.`,
+              `No tengo permisos para enviar mensajes o embeds en ${channel}.`,
             ),
           ],
         });
@@ -225,7 +216,7 @@ export default {
         { upsert: true },
       );
       return interaction.reply({
-        embeds: [successEmbed(`✅ Canal de anuncios de niveles: ${channel}`)],
+        embeds: [successEmbed(`Canal de anuncios de niveles: ${channel}`)],
       });
     }
 
@@ -236,7 +227,7 @@ export default {
         return interaction.reply({
           embeds: [
             errorEmbed(
-              "❌ El mensaje debe contener `{user}` y `{level}` para funcionar correctamente.",
+              "El mensaje debe contener `{user}` y `{level}` para funcionar correctamente.",
             ),
           ],
           flags: MessageFlags.Ephemeral,
@@ -251,8 +242,8 @@ export default {
       return interaction.reply({
         embeds: [
           successEmbed(
-            `✅ Mensaje de subida de nivel actualizado:\n\n` +
-              `📝 ${text.replace("{user}", "@usuario").replace("{level}", "10")}`,
+            `Mensaje de subida de nivel actualizado:\n\n` +
+              `${text.replace("{user}", "@usuario").replace("{level}", "10")}`,
           ),
         ],
       });
@@ -266,7 +257,7 @@ export default {
         return interaction.reply({
           embeds: [
             errorEmbed(
-              `❌ El canal ${channel} ya está en la lista de excluidos.`,
+              `El canal ${channel} ya está en la lista de excluidos.`,
             ),
           ],
           flags: MessageFlags.Ephemeral,
@@ -280,7 +271,7 @@ export default {
       );
       return interaction.reply({
         embeds: [
-          successEmbed(`🚫 Canal ${channel} excluido de la obtención de XP.`),
+          successEmbed(`Canal ${channel} excluido de la obtención de XP.`),
         ],
       });
     }
@@ -293,7 +284,7 @@ export default {
         return interaction.reply({
           embeds: [
             errorEmbed(
-              `❌ El canal ${channel} no está en la lista de excluidos.`,
+              `El canal ${channel} no está en la lista de excluidos.`,
             ),
           ],
           flags: MessageFlags.Ephemeral,
@@ -308,7 +299,7 @@ export default {
       return interaction.reply({
         embeds: [
           successEmbed(
-            `✅ Canal ${channel} ya no está excluido de la obtención de XP.`,
+            `Canal ${channel} ya no está excluido de la obtención de XP.`,
           ),
         ],
       });
@@ -339,7 +330,7 @@ export default {
         return interaction.reply({
           embeds: [
             successEmbed(
-              `✅ Nivel de ${target} reiniciado en **${interaction.guild.name}**.`,
+              `Nivel de ${target} reiniciado en **${interaction.guild.name}**.`,
             ),
           ],
         });
@@ -348,7 +339,7 @@ export default {
         return interaction.reply({
           embeds: [
             successEmbed(
-              `✅ Niveles de **${deletedCount.deletedCount}** usuarios reiniciados en **${interaction.guild.name}**.`,
+              `Niveles de **${deletedCount.deletedCount}** usuarios reiniciados en **${interaction.guild.name}**.`,
             ),
           ],
         });
@@ -370,18 +361,18 @@ export default {
 
       const embed = createEmbed({
         color: COLORS.INFO,
-        title: "⚙️ Configuración de Niveles",
+        title: "Configuración de niveles",
         description: [
-          `**📊 Estado:** ${config?.enabled ? `${emojis.on} Activado` : `${emojis.off} Desactivado`}`,
-          `**📢 Canal anuncios:** ${config?.announceChannel ? `<#${config.announceChannel}>` : "No configurado"}`,
-          `**📝 Mensaje:** ${config?.levelUpMessage || "🎉 ¡{user} ha subido al nivel **{level}**!"}`,
-          `**🚫 Canales excluidos:** ${ignoredText}`,
-          `**🎭 Roles por nivel:**\n${rolesText}`,
-          `**⚙️ XP por mensaje:** ${config?.xpMin || 15} - ${config?.xpMax || 25}`,
-          `**⏱️ Cooldown:** ${config?.cooldownSeconds || 60} segundos`,
+          `**Estado:** ${config?.enabled ? 'Activado' : 'Desactivado'}`,
+          `**Canal de anuncios:** ${config?.announceChannel ? `<#${config.announceChannel}>` : "No configurado"}`,
+          `**Mensaje de subida:** ${config?.levelUpMessage || "🎉 ¡{user} ha subido al nivel **{level}**!"}`,
+          `**Canales excluidos:** ${ignoredText}`,
+          `**Roles por nivel:**\n${rolesText}`,
+          `**XP por mensaje:** ${config?.xpMin || 15} - ${config?.xpMax || 25}`,
+          `**Cooldown:** ${config?.cooldownSeconds || 60} segundos`,
         ].join("\n"),
         footer: {
-          text: `Usa /levelconfig <subcomando> para cambiar ajustes`,
+          text: `Solicitado por ${interaction.user.username}`,
           icon: interaction.user.displayAvatarURL(),
         },
       });

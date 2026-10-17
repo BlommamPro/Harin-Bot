@@ -1,27 +1,12 @@
 import { SlashCommandBuilder, version as djsVersion } from 'discord.js';
-import { createEmbed, COLORS, BRANDING } from '../../utils/embeds.js';
+import { createEmbed, COLORS } from '../../utils/embeds.js';
 import { config } from '../../../config/config.js';
+import { header, block, kv, formatNumber, formatDuration } from '../../utils/embedDecorations.js';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { emojis } from '../../utils/emojis.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-function formatUptime(ms) {
-  const seconds = Math.floor(ms / 1000);
-  const mins = Math.floor(seconds / 60);
-  const hours = Math.floor(mins / 60);
-  const days = Math.floor(hours / 24);
-
-  const parts = [];
-  if (days > 0) parts.push(`${days}d`);
-  if (hours % 24 > 0) parts.push(`${hours % 24}h`);
-  if (mins % 60 > 0) parts.push(`${mins % 60}m`);
-  if (seconds % 60 > 0) parts.push(`${seconds % 60}s`);
-
-  return parts.join(' ') || '0s';
-}
 
 function formatBytes(bytes) {
   const sizes = ['B', 'KB', 'MB', 'GB'];
@@ -33,7 +18,7 @@ function formatBytes(bytes) {
 export default {
   CMD: new SlashCommandBuilder()
     .setName('botinfo')
-    .setDescription('Muestra informacion del bot'),
+    .setDescription('Muestra información del bot'),
 
   PERMISSIONS: [],
   BOT_PERMISSIONS: [],
@@ -41,7 +26,7 @@ export default {
   COOLDOWN: 5,
   GUILD_ONLY: false,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     let version = '1.0.0';
     try {
       const pkgPath = join(__dirname, '../../../package.json');
@@ -49,40 +34,53 @@ export default {
       version = pkg.version;
     } catch { /* ignorar */ }
 
-    const uptime = formatUptime(client.uptime);
-    const memoryUsage = process.memoryUsage();
-    const totalGuilds = client.guilds.cache.size;
-    const totalUsers = client.users.cache.size;
-    const totalChannels = client.channels.cache.size;
-    const totalCommands = client.slashCommands.size;
-    const nodeVersion = process.version;
+    const mem = process.memoryUsage();
+    const owners = config.ownerIds.length
+      ? config.ownerIds.map(id => `<@${id}>`).join(', ')
+      : '`No configurado`';
+
+    const description = [
+      `**${client.user.username}** — bot multifuncional con economía, niveles, moderación y sorteos.`,
+      '',
+      header('🤖', 'General'),
+      block([
+        kv('Versión', `\`v${version}\``),
+        kv('Uptime', `\`${formatDuration(client.uptime)}\``),
+        kv('Ping', `\`${client.ws.ping}ms\``),
+        kv('Creado', `<t:${Math.floor(client.user.createdTimestamp / 1000)}:R>`),
+      ]),
+      '',
+      header('🌐', 'Alcance'),
+      block([
+        kv('Servidores', `\`${formatNumber(client.guilds.cache.size)}\``),
+        kv('Usuarios', `\`${formatNumber(client.users.cache.size)}\``),
+        kv('Canales', `\`${formatNumber(client.channels.cache.size)}\``),
+        kv('Comandos', `\`${formatNumber(client.slashCommands.size)}\``),
+      ]),
+      '',
+      header('⚙️', 'Tecnología'),
+      block([
+        kv('Node.js', `\`${process.version}\``),
+        kv('discord.js', `\`v${djsVersion}\``),
+        kv('RAM (heap)', `\`${formatBytes(mem.heapUsed)} / ${formatBytes(mem.heapTotal)}\``),
+        kv('RAM (RSS)', `\`${formatBytes(mem.rss)}\``),
+      ]),
+      '',
+      header('👑', 'Desarrollo'),
+      block([kv('Owner(s)', owners)]),
+    ].join('\n');
 
     const embed = createEmbed({
       color: COLORS.INFO,
-      title: `${emojis.harin} ${client.user.username}`,
+      title: `ℹ️ ${client.user.username}`,
       thumbnail: client.user.displayAvatarURL({ dynamic: true, size: 256 }),
-      description: `${emojis.infor} **${client.user.username}** es un bot multifuncional con economía, niveles, moderación, sorteos y más.`,
-      fields: [
-        { name: '📦 Versión', value: `\`v${version}\``, inline: true },
-        { name: '⏱️ Uptime', value: `\`${uptime}\``, inline: true },
-        { name: '📡 Ping', value: `\`${client.ws.ping}ms\``, inline: true },
-        { name: '🏘️ Servidores', value: `\`${totalGuilds}\``, inline: true },
-        { name: '👥 Usuarios', value: `\`${totalUsers}\``, inline: true },
-        { name: '📋 Canales', value: `\`${totalChannels}\``, inline: true },
-        { name: '⌨️ Comandos', value: `\`${totalCommands}\``, inline: true },
-        { name: '💻 Node.js', value: `\`${nodeVersion}\``, inline: true },
-        { name: '📚 discord.js', value: `\`v${djsVersion}\``, inline: true },
-        { name: '🧠 RAM (Heap)', value: `\`${formatBytes(memoryUsage.heapUsed)} / ${formatBytes(memoryUsage.heapTotal)}\``, inline: true },
-        { name: '🧠 RAM (RSS)', value: `\`${formatBytes(memoryUsage.rss)}\``, inline: true },
-        { name: '👑 Owner(s)', value: config.ownerIds.length > 0 ? config.ownerIds.map(id => `<@${id}>`).join(', ') : 'No configurado', inline: false },
-        { name: '📅 Creado', value: `<t:${Math.floor(client.user.createdTimestamp / 1000)}:R>`, inline: true }
-      ],
+      description,
       footer: {
         text: `Solicitado por ${interaction.user.username}`,
-        icon: interaction.user.displayAvatarURL()
-      }
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     await interaction.reply({ embeds: [embed] });
-  }
+  },
 };

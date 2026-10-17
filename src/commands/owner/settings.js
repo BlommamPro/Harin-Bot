@@ -3,6 +3,8 @@ import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embed
 import { getGuildData, updateGuildData } from '../../utils/guildData.js';
 import { getLevelConfig, updateLevelConfig } from '../../utils/levelSystem.js';
 import { getWarnConfig, updateWarnConfig } from '../../utils/warns.js';
+import { getEconomyConfig, updateEconomyConfig } from '../../utils/economyConfigGuild.js';
+import { GuildEconomy } from '../../models/GuildEconomy.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -23,8 +25,7 @@ export default {
               .addChoices(
                 { name: '⭐ Niveles (XP por mensajes)', value: 'levels' },
                 { name: '🛡️ Warns automáticos', value: 'auto_warns' },
-                { name: '💰 Economía (comandos de dinero)', value: 'economy' },
-                { name: '🎁 Sorteos', value: 'giveaways' }
+                { name: '💰 Economía (comandos de dinero)', value: 'economy' }
               )
          )
          .addBooleanOption(opt =>
@@ -84,7 +85,8 @@ export default {
     if (sub === 'info') {
       const levelConfig = await getLevelConfig(interaction.guildId);
       const warnConfig = await getWarnConfig(interaction.guildId);
-      const guildData = await getGuildData(interaction.guildId);
+      const economyConfig = await getEconomyConfig(interaction.guildId);
+      const guildDataFull = await getGuildData(interaction.guildId);
 
       const { User } = await import('../../models/User.js');
       const { GuildLevel } = await import('../../models/GuildLevel.js');
@@ -116,12 +118,11 @@ export default {
           `⚠️ **Warns en este servidor:** ${warnCount}`,
           '',
           `**⚙️ Configuración**`,
-          `🌐 **Idioma:** \`${guildData?.language || 'es'}\``,
+          `🌐 **Idioma:** \`${guildDataFull?.language || 'es'}\``,
           '',
           `**🔧 Módulos**`,
           `⭐ **Niveles:** ${levelConfig?.enabled ? '✅ Activado' : '❌ Desactivado'}`,
-          `💰 **Economía:** ✅ Siempre activo`,
-          `🎁 **Sorteos:** ✅ Siempre activo`,
+          `💰 **Economía:** ${economyConfig?.economyEnabled ? '✅ Activado' : '❌ Desactivado'}`,
           `🛡️ **Warns Auto:** ${warnConfig.actions.length > 0 ? `✅ Activado (${warnConfig.actions.length} reglas)` : '❌ Desactivado'}`
         ].join('\n'),
         footer: {
@@ -147,7 +148,7 @@ export default {
             )]
           });
 
-        case 'auto_warns':
+        case 'auto_warns': {
           const warnConfig = await getWarnConfig(interaction.guildId);
           if (enable) {
             if (warnConfig.actions.length === 0) {
@@ -167,22 +168,14 @@ export default {
               (enable ? '3 warns = timeout, 5 warns = kick, 7 warns = ban' : 'Los warns ya no ejecutarán acciones automáticas.')
             )]
           });
+        }
 
         case 'economy':
-          await updateGuildData(interaction.guildId, { economyEnabled: enable });
+          await updateEconomyConfig(interaction.guildId, { economyEnabled: enable });
           return interaction.reply({
             embeds: [successEmbed(
               `💰 **Economía:** ${enable ? '✅ Activado' : '❌ Desactivado'}\n` +
               (enable ? 'Los comandos de economía están disponibles.' : 'Los comandos de economía están desactivados.')
-            )]
-          });
-
-        case 'giveaways':
-          await updateGuildData(interaction.guildId, { giveawaysEnabled: enable });
-          return interaction.reply({
-            embeds: [successEmbed(
-              `🎁 **Sorteos:** ${enable ? '✅ Activado' : '❌ Desactivado'}\n` +
-              (enable ? 'Los sorteos están disponibles.' : 'Los sorteos están desactivados.')
             )]
           });
 
@@ -210,59 +203,40 @@ export default {
       const { GuildLevel } = await import('../../models/GuildLevel.js');
       const { Warn } = await import('../../models/Warn.js');
 
-      const guildUserIds = await GuildLevel
-        .find({ guildId: interaction.guildId })
-        .distinct('userId');
-
-      const warnUserIds = await Warn
-        .find({ guildId: interaction.guildId })
-        .distinct('userId');
-
-      const allGuildUserIds = [...new Set([...guildUserIds, ...warnUserIds])];
-
       switch (what) {
         case 'all_users': {
-          let userResult = { deletedCount: 0 };
-
-          if (allGuildUserIds.length > 0) {
-            userResult = await User.deleteMany({ userId: { $in: allGuildUserIds } });
-          }
-
           const levelResult = await GuildLevel.deleteMany({ guildId: interaction.guildId });
           const warnResult = await Warn.deleteMany({ guildId: interaction.guildId });
+          const economyResult = await GuildEconomy.deleteMany({ guildId: interaction.guildId });
 
           resultMessage =
             `✅ **Datos limpiados en este servidor:**\n` +
-            `👤 ${userResult.deletedCount} usuarios eliminados\n` +
             `⭐ ${levelResult.deletedCount} niveles eliminados\n` +
-            `⚠️ ${warnResult.deletedCount} warns eliminados\n\n` +
+            `⚠️ ${warnResult.deletedCount} warns eliminados\n` +
+            `💰 ${economyResult.deletedCount} economías eliminadas\n\n` +
             `🔒 **Solo se afectó a este servidor.** Los otros servidores no fueron tocados.`;
           break;
         }
 
         case 'economy': {
-          let userUpdateResult = { modifiedCount: 0 };
+          const economyResult = await GuildEconomy.updateMany(
+            { guildId: interaction.guildId },
+            { balance: 500, bank: 0, upgrades: [], inventory: [] }
+          );
 
-          if (allGuildUserIds.length > 0) {
-            userUpdateResult = await User.updateMany(
-              { userId: { $in: allGuildUserIds } },
-              { balance: 500, bank: 0, inventory: [] }
-            );
-          }
-
-          resultMessage = `💰 **Economía reiniciada para ${userUpdateResult.modifiedCount} usuarios** de este servidor.\nTodos tienen ahora 500 coins y banco vacío.`;
+          resultMessage = `💰 **Economía reiniciada para ${economyResult.modifiedCount} usuarios** de este servidor.\nTodos tienen ahora 500 coins y banco vacío.`;
           break;
         }
 
         case 'levels': {
-          const levelDeleteResult = await GuildLevel.deleteMany({ guildId: interaction.guildId });
-          resultMessage = `⭐ **${levelDeleteResult.deletedCount} niveles eliminados** en este servidor.`;
+          const levelResult = await GuildLevel.deleteMany({ guildId: interaction.guildId });
+          resultMessage = `⭐ **${levelResult.deletedCount} niveles eliminados** en este servidor.`;
           break;
         }
 
         case 'warns': {
-          const warnDeleteResult = await Warn.deleteMany({ guildId: interaction.guildId });
-          resultMessage = `⚠️ **${warnDeleteResult.deletedCount} warns eliminados** en este servidor.`;
+          const warnResult = await Warn.deleteMany({ guildId: interaction.guildId });
+          resultMessage = `⚠️ **${warnResult.deletedCount} warns eliminados** en este servidor.`;
           break;
         }
 

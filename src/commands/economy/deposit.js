@@ -1,6 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { getGuildEconomy, updateGuildEconomy, getUserData } from '../../utils/guildData.js';
+import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
+import { getGuildLevel } from '../../utils/levelSystem.js';
 import { getUpgradeEffect } from '../../utils/economyConfig.js';
 
 function getBankCapacity(level, upgrades) {
@@ -24,16 +26,17 @@ export default {
   COOLDOWN: 0,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const input = interaction.options.getString('cantidad').toLowerCase().trim();
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
-    const globalUser = await getUserData(interaction.user.id);
+
+    const guildLevelData = await getGuildLevel(interaction.guildId, interaction.user.id);
+    const userLevel = guildLevelData.level || 1;
 
     const currentWallet = economy?.balance || 0;
     const currentBank = economy?.bank || 0;
-    const userLevel = globalUser?.level || 1;
     const maxCapacity = getBankCapacity(userLevel, economy.upgrades);
 
     let amount = 0;
@@ -42,7 +45,7 @@ export default {
     } else {
       amount = parseInt(input, 10);
       if (isNaN(amount) || amount <= 0) {
-        return interaction.editReply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')] });
+        return interaction.editReply({ embeds: [errorEmbed('Introduce una cantidad válida o "all".')] });
       }
     }
 
@@ -53,34 +56,37 @@ export default {
     if (amount >= currentWallet) {
       amount = currentWallet - 1;
       if (amount <= 0) {
-        return interaction.editReply({ embeds: [errorEmbed('Debes dejar al menos **1 coin** en mano.')] });
+        return interaction.editReply({ embeds: [errorEmbed('Debes dejar al menos 1 coin en mano.')] });
       }
     }
 
     const spaceLeft = maxCapacity - currentBank;
     if (spaceLeft <= 0) {
       return interaction.editReply({
-        embeds: [errorEmbed(`Tu banco está lleno. Capacidad: **${maxCapacity}** (Nivel ${userLevel}).`)]
+        embeds: [errorEmbed(`Tu banco está lleno. Capacidad: \`${formatNumber(maxCapacity)}\` coins (Nivel servidor: ${userLevel}).`)],
       });
     }
 
     if (amount > spaceLeft) amount = spaceLeft;
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, {
-      $inc: { balance: -amount, bank: amount }
+      $inc: { balance: -amount, bank: amount },
     });
 
     const newWallet = currentWallet - amount;
     const newBank = currentBank + amount;
 
-    const embed = successEmbed(
-      `Depositaste **${amount} coins** en el banco.\n\n` +
-      `💰 En mano: **${newWallet}**\n` +
-      `🏦 Banco: **${newBank} / ${maxCapacity}**\n` +
-      `📊 Total: **${newWallet + newBank}**`
-    );
-    embed.setTitle('🏦 Depósito Exitoso');
+    const description = [
+      header('🏦', 'Depósito exitoso'),
+      block([
+        kv('Depositado', `\`${formatNumber(amount)} coins\``),
+        kv('En mano', `\`${formatNumber(newWallet)} coins\``),
+        kv('Banco', `\`${formatNumber(newBank)} / ${formatNumber(maxCapacity)}\``),
+        kv('Total', `\`${formatNumber(newWallet + newBank)} coins\``),
+      ]),
+    ].join('\n');
 
+    const embed = successEmbed(description);
     return interaction.editReply({ embeds: [embed] });
-  }
+  },
 };

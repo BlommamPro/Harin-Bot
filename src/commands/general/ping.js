@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { createEmbed } from '../../utils/embeds.js';
-import { emojis } from '../../utils/emojis.js';
+import { createEmbed, COLORS } from '../../utils/embeds.js';
+import { header, block, kv } from '../../utils/embedDecorations.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -12,21 +12,30 @@ export default {
   OWNER: false,
   COOLDOWN: 3,
   GUILD_ONLY: false,
-  NSFW: false,
 
-  async execute(client, interaction, guildData, userData) {
-    await interaction.reply({ content: `${emojis.pingconnetion} Calculando ${emojis.load}` });
+  async execute(client, interaction) {
+    await interaction.reply({ content: '📡 Calculando...' });
     const sent = await interaction.fetchReply();
     const latency = sent.createdTimestamp - interaction.createdTimestamp;
 
+    const description = [
+      header('📡', 'Latencia'),
+      block([
+        kv('API', `\`${client.ws.ping}ms\``),
+        kv('Bot', `\`${latency}ms\``),
+      ]),
+    ].join('\n');
+
     const embed = createEmbed({
-      title: '🏓 Pong!',
-      description: [
-        `📡 **API:** \`${client.ws.ping}ms\``,
-        `⏱️ **Latencia:** \`${latency}ms\``
-      ].join('\n')
+      color: COLORS.INFO,
+      title: '🏓 Pong',
+      description,
+      footer: {
+        text: `Solicitado por ${interaction.user.username}`,
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     await interaction.editReply({ content: null, embeds: [embed] });
-  }
+  },
 };

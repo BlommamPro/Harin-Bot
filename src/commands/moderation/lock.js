@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { emojis } from '../../utils/emojis.js';
+import { header, block, kv } from '../../utils/embedDecorations.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -15,9 +15,7 @@ export default {
          .setRequired(false)
     )
     .addStringOption(opt =>
-      opt.setName('razon')
-         .setDescription('Razón del bloqueo')
-         .setRequired(false)
+      opt.setName('razon').setDescription('Razón del bloqueo').setRequired(false).setMaxLength(512)
     ),
 
   PERMISSIONS: ['ManageChannels'],
@@ -26,16 +24,15 @@ export default {
   COOLDOWN: 5,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const targetChannel = interaction.options.getChannel('canal') || interaction.channel;
-    const reason = interaction.options.getString('razon') || 'Sin razón';
+    const reason = interaction.options.getString('razon') || 'Sin razón especificada';
 
     if (!targetChannel.isTextBased()) {
       return interaction.reply({ embeds: [errorEmbed('Solo puedo bloquear canales de texto.')], flags: MessageFlags.Ephemeral });
     }
 
     const everyone = interaction.guild.roles.everyone;
-
     const botPerms = targetChannel.permissionsFor(interaction.guild.members.me);
     if (!botPerms.has(PermissionFlagsBits.ManageChannels)) {
       return interaction.reply({ embeds: [errorEmbed('No tengo permisos para gestionar este canal.')], flags: MessageFlags.Ephemeral });
@@ -48,15 +45,23 @@ export default {
 
     try {
       await targetChannel.permissionOverwrites.edit(everyone, {
-        SendMessages: false
+        SendMessages: false,
       }, { reason: `${interaction.user.tag}: ${reason}` });
 
-      const embed = successEmbed(`**Canal:** ${targetChannel}\n**Razón:** ${reason}`);
-      embed.setTitle(`${emojis.locker} Canal Bloqueado`);
+      const description = [
+        header('🔒', 'Canal bloqueado'),
+        block([
+          kv('Canal', targetChannel),
+          kv('Razón', reason),
+          kv('Moderador', interaction.user),
+        ]),
+      ].join('\n');
 
+      const embed = successEmbed(description);
+      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
       await interaction.reply({ embeds: [embed] });
     } catch (err) {
       return interaction.reply({ embeds: [errorEmbed(`No pude bloquear el canal: ${err.message}`)], flags: MessageFlags.Ephemeral });
     }
-  }
+  },
 };

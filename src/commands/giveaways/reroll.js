@@ -1,5 +1,6 @@
-import { SlashCommandBuilder, PermissionFlagsBits , MessageFlags} from 'discord.js';
+import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { errorEmbed, successEmbed } from '../../utils/embeds.js';
+import { header, block, kv } from '../../utils/embedDecorations.js';
 import { rerollGiveaway } from '../../utils/giveawayHandler.js';
 
 export default {
@@ -9,9 +10,7 @@ export default {
     .setDMPermission(false)
     .setDefaultMemberPermissions(PermissionFlagsBits.ManageEvents)
     .addStringOption(opt =>
-      opt.setName('id')
-         .setDescription('ID del sorteo')
-         .setRequired(true)
+      opt.setName('id').setDescription('ID del sorteo').setRequired(true)
     ),
 
   PERMISSIONS: ['ManageEvents'],
@@ -20,18 +19,28 @@ export default {
   COOLDOWN: 5,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const id = interaction.options.getString('id').toUpperCase();
     const winner = await rerollGiveaway(id, interaction.guildId);
 
     if (!winner) {
-      return interaction.reply({ 
-        embeds: [errorEmbed('No encontré ese sorteo terminado en este servidor.')], flags: MessageFlags.Ephemeral });
+      return interaction.reply({
+        embeds: [errorEmbed('No encontré ese sorteo terminado en este servidor.')],
+        flags: MessageFlags.Ephemeral,
+      });
     }
 
+    const description = [
+      header('🔁', 'Nuevo ganador'),
+      block([
+        kv('ID', `\`${id}\``),
+        kv('Ganador', `<@${winner}>`),
+      ]),
+    ].join('\n');
+
     await interaction.reply({
-      embeds: [successEmbed(`🎉 Nuevo ganador: <@${winner}>!`)],
-      content: `<@${winner}>`
+      embeds: [successEmbed(description)],
+      content: `<@${winner}>`,
     });
-  }
+  },
 };

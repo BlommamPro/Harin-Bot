@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
+import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
@@ -23,7 +24,7 @@ const CRIMES = [
   { name: 'estafa piramidal', description: 'convenciste a inversores', min: 110, max: 340, failPenalty: 190, emoji: '🏛️' },
   { name: 'robo en una joyería', description: 'te llevaste diamantes y oro', min: 130, max: 360, failPenalty: 220, emoji: '💎' },
   { name: 'tráfico de información', description: 'vendiste secretos corporativos', min: 70, max: 260, failPenalty: 130, emoji: '📊' },
-  { name: 'asalto a un casino', description: 'robaste en un casino de lujo', min: 150, max: 400, failPenalty: 250, emoji: '🎰' }
+  { name: 'asalto a un casino', description: 'robaste en un casino de lujo', min: 150, max: 400, failPenalty: 250, emoji: '🎰' },
 ];
 
 const FAIL_MESSAGES = [
@@ -32,13 +33,13 @@ const FAIL_MESSAGES = [
   'la seguridad privada te atrapó y pagaste una multa',
   'tu cómplice te traicionó y perdiste dinero',
   'las cámaras de seguridad te grabaron y tuviste que pagar abogados',
-  'un vecino llamó a la policía y te escapaste pero perdiste el botín'
+  'un vecino llamó a la policía y te escapaste pero perdiste el botín',
 ];
 
 export default {
   CMD: new SlashCommandBuilder()
     .setName('crime')
-    .setDescription('🦹 Comete un crimen para ganar (o perder) dinero')
+    .setDescription('Comete un crimen para ganar (o perder) dinero')
     .setDMPermission(false),
 
   PERMISSIONS: [],
@@ -47,13 +48,11 @@ export default {
   COOLDOWN: 0,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) {
-      return interaction.editReply({ embeds: economyDisabled.embeds });
-    }
+    if (economyDisabled) return interaction.editReply({ embeds: economyDisabled.embeds });
 
     const config = await getEconomyConfig(interaction.guildId);
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
@@ -61,7 +60,7 @@ export default {
     const cd = await checkDbCooldown(interaction.user.id, `crime_${interaction.guildId}`, config.crimeCooldownMinutes);
     if (cd.onCooldown) {
       return interaction.editReply({
-        embeds: [errorEmbed(`👮 La policía te vigila. Vuelve <t:${cd.nextTimestamp}:R>.`)],
+        embeds: [errorEmbed(`La policía te está vigilando. Vuelve <t:${cd.nextTimestamp}:R>.`)],
       });
     }
 
@@ -74,7 +73,7 @@ export default {
       const reward = applyPetBonus(baseReward, economy.upgrades);
 
       await updateGuildEconomy(interaction.guildId, interaction.user.id, {
-        $inc: { balance: reward, crimes: 1 }
+        $inc: { balance: reward, crimes: 1 },
       });
       await setDbCooldown(interaction.user.id, `crime_${interaction.guildId}`);
       await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, reward);
@@ -82,35 +81,42 @@ export default {
       const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
       const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
-      const embed = successEmbed(
-        `**${crime.emoji} Cometiste un ${crime.name}**\n` +
-        `📝 ${crime.description} y conseguiste **${reward} coins**!\n\n` +
-        `🦹 Crímenes cometidos: ${updatedEconomy.crimes}`
-      );
-      embed.setTitle('🦹 Crimen Exitoso');
+      const lines = [
+        header(crime.emoji, crime.name),
+        `-# ${crime.description}`,
+        '',
+        block([
+          kv('Ganancia', `\`${formatNumber(reward)} coins\``),
+          kv('Crímenes', `\`${updatedEconomy.crimes}\``),
+          kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
+        ]),
+      ];
 
       if (newAchievements.length > 0) {
-        embed.addFields({
-          name: '🏆 ¡Nuevos logros!',
-          value: newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n')
-        });
+        lines.push('', header('🏆', 'Logros desbloqueados'));
+        lines.push(newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'));
       }
 
-      return interaction.editReply({ embeds: [embed] });
-    } else {
-      const fine = Math.min(Math.floor((economy.balance || 0) * 0.1), crime.failPenalty);
-      const failMessage = FAIL_MESSAGES[Math.floor(Math.random() * FAIL_MESSAGES.length)];
-
-      await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -fine } });
-      await setDbCooldown(interaction.user.id, `crime_${interaction.guildId}`);
-
-      const embed = errorEmbed(
-        `**${crime.emoji} Intentaste un ${crime.name}**\n` +
-        `📝 Fallaste porque ${failMessage} y pagaste **${fine} coins** de multa.`
-      );
-      embed.setTitle('👮 ¡Te Atraparon!');
-
+      const embed = successEmbed(lines.join('\n'), '🦹 Crimen exitoso');
       return interaction.editReply({ embeds: [embed] });
     }
-  }
+
+    const fine = Math.min(Math.floor((economy.balance || 0) * 0.1), crime.failPenalty);
+    const failMessage = FAIL_MESSAGES[Math.floor(Math.random() * FAIL_MESSAGES.length)];
+
+    await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -fine } });
+    await setDbCooldown(interaction.user.id, `crime_${interaction.guildId}`);
+
+    const lines = [
+      header(crime.emoji, crime.name),
+      '',
+      block([
+        kv('Motivo', failMessage),
+        kv('Multa', `\`${formatNumber(fine)} coins\``),
+      ]),
+    ];
+
+    const embed = errorEmbed(lines.join('\n'), '🚔 Te atraparon');
+    return interaction.editReply({ embeds: [embed] });
+  },
 };

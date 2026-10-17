@@ -1,5 +1,6 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { createEmbed, errorEmbed } from '../../utils/embeds.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { header, kv, getMedal, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildLeaderboard } from '../../utils/levelSystem.js';
 import { User } from '../../models/User.js';
 
@@ -13,8 +14,8 @@ export default {
          .setDescription('Qué leaderboard ver')
          .setRequired(false)
          .addChoices(
-           { name: '🏠 Niveles del Servidor', value: 'guild_levels' },
-           { name: '🌍 Niveles Globales', value: 'global_levels' }
+           { name: '🏠 Niveles del servidor', value: 'guild_levels' },
+           { name: '🌍 Niveles globales', value: 'global_levels' }
          )
     ),
 
@@ -24,7 +25,7 @@ export default {
   COOLDOWN: 10,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const type = interaction.options.getString('tipo') || 'guild_levels';
 
     if (type === 'guild_levels') {
@@ -33,18 +34,28 @@ export default {
       if (top.length === 0) {
         return interaction.reply({
           embeds: [errorEmbed('Nadie tiene niveles en este servidor todavía.')],
-          flags: MessageFlags.Ephemeral
+          flags: MessageFlags.Ephemeral,
         });
       }
 
-      const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
-      const description = top.map((u, i) =>
-        `${medals[i] || '🔹'} <@${u.userId}> — Nivel **${u.level}** | XP: \`${u.xp}\``
-      ).join('\n');
+      const lines = top.map((u, i) => {
+        return `${getMedal(i)} <@${u.userId}> — **Nv. ${u.level}** · \`${formatNumber(u.xp)} XP\``;
+      });
+
+      const description = [
+        header('🏆', `Top niveles · ${interaction.guild.name}`),
+        '',
+        lines.join('\n'),
+      ].join('\n');
 
       const embed = createEmbed({
-        title: `🏆 Top Niveles — ${interaction.guild.name}`,
-        description
+        color: COLORS.LEVELING,
+        title: '🏆 Ranking del servidor',
+        description,
+        footer: {
+          text: `Solicitado por ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
       });
 
       return interaction.reply({ embeds: [embed] });
@@ -56,21 +67,31 @@ export default {
       if (top.length === 0) {
         return interaction.reply({
           embeds: [errorEmbed('Nadie tiene niveles globales todavía.')],
-          flags: MessageFlags.Ephemeral
+          flags: MessageFlags.Ephemeral,
         });
       }
 
-      const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
-      const description = top.map((u, i) =>
-        `${medals[i] || '🔹'} <@${u.userId}> — Nivel **${u.level}** | XP: \`${u.xp}\``
-      ).join('\n');
+      const lines = top.map((u, i) => {
+        return `${getMedal(i)} <@${u.userId}> — **Nv. ${u.level}** · \`${formatNumber(u.xp)} XP\``;
+      });
+
+      const description = [
+        header('🌍', 'Top niveles globales'),
+        '',
+        lines.join('\n'),
+      ].join('\n');
 
       const embed = createEmbed({
-        title: '🏆 Top Niveles Globales',
-        description
+        color: COLORS.LEVELING,
+        title: '🌍 Ranking global',
+        description,
+        footer: {
+          text: `Solicitado por ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
       });
 
       return interaction.reply({ embeds: [embed] });
     }
-  }
+  },
 };

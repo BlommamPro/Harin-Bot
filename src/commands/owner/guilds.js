@@ -6,25 +6,25 @@ const ITEMS_PER_PAGE = 10;
 export default {
   CMD: new SlashCommandBuilder()
     .setName('guilds')
-    .setDescription('📋 Panel de gestión de servidores (SOLO OWNER)')
+    .setDescription('Panel de gestión de servidores (solo owner)')
     .setDMPermission(true)
     .addSubcommand(sub =>
       sub.setName('list')
-         .setDescription('📋 Listar todos los servidores del bot')
+         .setDescription('Listar todos los servidores del bot')
          .addStringOption(opt =>
            opt.setName('orden')
               .setDescription('Ordenar por')
               .setRequired(false)
               .addChoices(
-                { name: '📅 Más reciente', value: 'recent' },
-                { name: '👥 Más miembros', value: 'members' },
-                { name: '🔤 Alfabético (A-Z)', value: 'alphabetical' }
+                { name: 'Más reciente', value: 'recent' },
+                { name: 'Más miembros', value: 'members' },
+                { name: 'Alfabético (A-Z)', value: 'alphabetical' }
               )
          )
     )
     .addSubcommand(sub =>
       sub.setName('info')
-         .setDescription('🔍 Ver información detallada de un servidor')
+         .setDescription('Ver información detallada de un servidor')
          .addStringOption(opt =>
            opt.setName('id')
               .setDescription('ID del servidor')
@@ -33,7 +33,7 @@ export default {
     )
     .addSubcommand(sub =>
       sub.setName('leave')
-         .setDescription('🚪 Salir de un servidor (¡CUIDADO!)')
+         .setDescription('Salir de un servidor (¡CUIDADO!)')
          .addStringOption(opt =>
            opt.setName('id')
               .setDescription('ID del servidor')
@@ -47,7 +47,7 @@ export default {
     )
     .addSubcommand(sub =>
       sub.setName('search')
-         .setDescription('🔎 Buscar un servidor por nombre o ID')
+         .setDescription('Buscar un servidor por nombre o ID')
          .addStringOption(opt =>
            opt.setName('query')
               .setDescription('Nombre o ID del servidor')
@@ -56,11 +56,11 @@ export default {
     )
     .addSubcommand(sub =>
       sub.setName('stats')
-         .setDescription('📊 Ver estadísticas globales del bot')
+         .setDescription('Ver estadísticas globales del bot')
     )
     .addSubcommand(sub =>
       sub.setName('announce')
-         .setDescription('📢 Enviar un anuncio a un servidor específico')
+         .setDescription('Enviar un anuncio a un servidor específico')
          .addStringOption(opt =>
            opt.setName('id')
               .setDescription('ID del servidor')
@@ -94,7 +94,7 @@ export default {
 
       if (guilds.length === 0) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ El bot no está en ningún servidor.')],
+          embeds: [errorEmbed('El bot no está en ningún servidor.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -124,11 +124,10 @@ export default {
           return {
             name: `${start + i + 1}. ${g.name}`,
             value: [
-              `🆔 \`${g.id}\``,
-              `👥 **${g.memberCount}** miembros`,
-              `👑 ${owner ? owner.tag : 'Desconocido'}`,
-              `📅 <t:${Math.floor(g.joinedTimestamp / 1000)}:R>`,
-              g.icon ? `🖼️ [Icono](${g.iconURL({ size: 64 })})` : '❌ Sin icono'
+              `ID: \`${g.id}\``,
+              `**${g.memberCount}** miembros`,
+              `Dueño: ${owner ? owner.tag : 'Desconocido'}`,
+              `Unido: <t:${Math.floor(g.joinedTimestamp / 1000)}:R>`
             ].join('\n'),
             inline: false
           };
@@ -138,21 +137,21 @@ export default {
 
         return createEmbed({
           color: COLORS.OWNER,
-          title: `🏘️ Servidores del Bot (${guilds.length})`,
+          title: `Servidores del bot (${guilds.length})`,
           description: [
-            `📊 **Total de miembros:** ${totalMembers.toLocaleString()}`,
-            `📋 **Ordenado por:** ${order}`,
-            `📄 Página **${page + 1}** de **${totalPages}**`,
+            `**Total de miembros:** ${totalMembers.toLocaleString()}`,
+            `**Ordenado por:** ${order}`,
+            `**Página ${page + 1} de ${totalPages}**`,
             '',
-            `💡 **Comandos útiles:**`,
+            `Comandos útiles:`,
             `• \`/guilds info <id>\` - Ver detalles de un servidor`,
             `• \`/guilds leave <id>\` - Salir de un servidor`,
             `• \`/guilds search <nombre>\` - Buscar un servidor`
           ].join('\n'),
           fields: fields,
           footer: {
-            text: `Usa /guilds para gestionar tus servidores`,
-            icon: client.user.displayAvatarURL()
+            text: `Solicitado por ${interaction.user.username}`,
+            icon: interaction.user.displayAvatarURL()
           }
         });
       };
@@ -163,12 +162,12 @@ export default {
         row.addComponents(
           new ButtonBuilder()
             .setCustomId(`guilds_list_prev_${interaction.user.id}`)
-            .setLabel('◀ Anterior')
+            .setLabel('Anterior')
             .setStyle(ButtonStyle.Primary)
             .setDisabled(page === 0),
           new ButtonBuilder()
             .setCustomId(`guilds_list_next_${interaction.user.id}`)
-            .setLabel('Siguiente ▶')
+            .setLabel('Siguiente')
             .setStyle(ButtonStyle.Primary)
             .setDisabled(page === totalPages - 1)
         );
@@ -217,7 +216,7 @@ export default {
 
       if (!guild) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No encontré el servidor con ID: \`${guildId}\``)],
+          embeds: [errorEmbed(`No encontré el servidor con ID: \`${guildId}\``)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -240,35 +239,35 @@ export default {
 
       const embed = createEmbed({
         color: COLORS.OWNER,
-        title: `🔍 ${guild.name}`,
+        title: `Información de ${guild.name}`,
         thumbnail: guild.iconURL({ dynamic: true, size: 256 }),
         description: [
-          `**📛 Nombre:** ${guild.name}`,
-          `**🆔 ID:** \`${guild.id}\``,
-          `**👑 Dueño:** ${owner ? owner.tag : 'Desconocido'} (\`${guild.ownerId}\`)`,
-          `**📅 Creado:** <t:${Math.floor(guild.createdTimestamp / 1000)}:F>`,
-          `**🤖 Bot unido:** <t:${Math.floor(guild.joinedTimestamp / 1000)}:R>`,
+          `**Nombre:** ${guild.name}`,
+          `**ID:** \`${guild.id}\``,
+          `**Dueño:** ${owner ? owner.tag : 'Desconocido'} (\`${guild.ownerId}\`)`,
+          `**Creado:** <t:${Math.floor(guild.createdTimestamp / 1000)}:F>`,
+          `**Bot unido:** <t:${Math.floor(guild.joinedTimestamp / 1000)}:R>`,
           '',
-          `**📊 Estadísticas del Servidor**`,
-          `👥 **Miembros:** ${guild.memberCount}`,
-          `🤖 **Bots:** ${guild.members.cache.filter(m => m.user.bot).size}`,
-          `📢 **Canales:** ${channels.size} (${textChannels} texto, ${voiceChannels} voz)`,
-          `💬 **Roles:** ${guild.roles.cache.size}`,
-          `📎 **Emojis:** ${guild.emojis.cache.size}`,
+          `**Estadísticas del servidor**`,
+          `**Miembros:** ${guild.memberCount}`,
+          `**Bots:** ${guild.members.cache.filter(m => m.user.bot).size}`,
+          `**Canales:** ${channels.size} (${textChannels} texto, ${voiceChannels} voz)`,
+          `**Roles:** ${guild.roles.cache.size}`,
+          `**Emojis:** ${guild.emojis.cache.size}`,
           '',
-          `**📊 Datos en Base de Datos**`,
-          `⭐ **Niveles registrados:** ${levelCount}`,
-          `⚠️ **Warns:** ${warnCount}`,
-          `🎁 **Sorteos activos:** ${giveawayCount}`,
+          `**Datos en base de datos**`,
+          `**Niveles registrados:** ${levelCount}`,
+          `**Warns:** ${warnCount}`,
+          `**Sorteos activos:** ${giveawayCount}`,
           '',
-          `**🔑 Permisos del Bot (${botPermissions.length})**`,
+          `**Permisos del bot (${botPermissions.length})**`,
           botPermissions.length > 0 
             ? botPermissions.slice(0, 8).map(p => `• ${p}`).join('\n') + (botPermissions.length > 8 ? `\n• ... y ${botPermissions.length - 8} más` : '')
-            : '❌ No se pudieron obtener los permisos'
+            : 'No se pudieron obtener los permisos'
         ].join('\n'),
         footer: {
-          text: `Usa /guilds leave ${guild.id} para salir de este servidor`,
-          icon: client.user.displayAvatarURL()
+          text: `Solicitado por ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL()
         }
       });
 
@@ -281,7 +280,7 @@ export default {
 
       if (!confirm) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes confirmar con `confirmar:true` para salir del servidor.')],
+          embeds: [errorEmbed('Debes confirmar con `confirmar:true` para salir del servidor.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -289,14 +288,14 @@ export default {
       const guild = client.guilds.cache.get(guildId);
       if (!guild) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No encontré el servidor con ID: \`${guildId}\``)],
+          embeds: [errorEmbed(`No encontré el servidor con ID: \`${guildId}\``)],
           flags: MessageFlags.Ephemeral
         });
       }
 
       if (client.guilds.cache.size <= 1) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ No puedes salir del último servidor. El bot necesita estar en al menos un servidor.')],
+          embeds: [errorEmbed('No puedes salir del último servidor. El bot necesita estar en al menos un servidor.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -305,11 +304,14 @@ export default {
         await guild.leave();
         
         return interaction.reply({
-          embeds: [successEmbed(`🚪 He salido del servidor **${guild.name}** (\`${guildId}\`)\n📊 Servidores restantes: ${client.guilds.cache.size}`)]
+          embeds: [successEmbed(
+            `He salido del servidor **${guild.name}** (\`${guildId}\`)\n` +
+            `Servidores restantes: ${client.guilds.cache.size}`
+          )]
         });
       } catch (err) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No pude salir del servidor: ${err.message}`)],
+          embeds: [errorEmbed(`No pude salir del servidor: ${err.message}`)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -326,7 +328,7 @@ export default {
 
       if (results.length === 0) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No encontré ningún servidor que coincida con: \`${query}\``)],
+          embeds: [errorEmbed(`No encontré ningún servidor que coincida con: \`${query}\``)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -334,22 +336,22 @@ export default {
       const fields = results.slice(0, 25).map(g => ({
         name: g.name,
         value: [
-          `🆔 \`${g.id}\``,
-          `👥 **${g.memberCount}** miembros`,
-          `👑 <@${g.ownerId}>`,
-          `📅 <t:${Math.floor(g.joinedTimestamp / 1000)}:R>`
+          `ID: \`${g.id}\``,
+          `**${g.memberCount}** miembros`,
+          `Dueño: <@${g.ownerId}>`,
+          `Unido: <t:${Math.floor(g.joinedTimestamp / 1000)}:R>`
         ].join('\n'),
         inline: true
       }));
 
       const embed = createEmbed({
         color: COLORS.OWNER,
-        title: `🔎 Resultados de búsqueda: "${query}"`,
+        title: `Resultados de búsqueda: "${query}"`,
         description: `Encontrados **${results.length}** servidores${results.length > 25 ? ' (mostrando 25)' : ''}`,
         fields: fields,
         footer: {
-          text: `Usa /guilds info <id> para ver detalles`,
-          icon: client.user.displayAvatarURL()
+          text: `Solicitado por ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL()
         }
       });
 
@@ -377,34 +379,34 @@ export default {
 
       const embed = createEmbed({
         color: COLORS.OWNER,
-        title: '📊 Estadísticas Globales del Bot',
+        title: 'Estadísticas globales del bot',
         thumbnail: client.user.displayAvatarURL({ size: 256 }),
         description: [
-          `**📊 Discord**`,
-          `🏘️ **Servidores:** ${guilds.length}`,
-          `👥 **Miembros totales:** ${totalMembers.toLocaleString()}`,
-          `🤖 **Bots totales:** ${totalBots.toLocaleString()}`,
-          `👤 **Usuarios humanos:** ${(totalMembers - totalBots).toLocaleString()}`,
+          `**Discord**`,
+          `**Servidores:** ${guilds.length}`,
+          `**Miembros totales:** ${totalMembers.toLocaleString()}`,
+          `**Bots totales:** ${totalBots.toLocaleString()}`,
+          `**Usuarios humanos:** ${(totalMembers - totalBots).toLocaleString()}`,
           '',
-          `**📊 Servidores por Tamaño**`,
-          `🟢 **< 50 miembros:** ${smallGuilds}`,
-          `🟡 **50 - 500 miembros:** ${mediumGuilds}`,
-          `🔴 **> 500 miembros:** ${largeGuilds}`,
+          `**Servidores por tamaño**`,
+          `• Menos de 50 miembros: ${smallGuilds}`,
+          `• Entre 50 y 500 miembros: ${mediumGuilds}`,
+          `• Más de 500 miembros: ${largeGuilds}`,
           '',
-          `**📊 Base de Datos**`,
-          `👤 **Usuarios registrados:** ${userCount}`,
-          `⭐ **Niveles totales:** ${levelCount}`,
-          `⚠️ **Warns totales:** ${warnCount}`,
-          `🎁 **Sorteos activos:** ${giveawayCount}`,
+          `**Base de datos**`,
+          `**Usuarios registrados:** ${userCount}`,
+          `**Niveles totales:** ${levelCount}`,
+          `**Warns totales:** ${warnCount}`,
+          `**Sorteos activos:** ${giveawayCount}`,
           '',
-          `**⚡ Rendimiento**`,
-          `📡 **Ping:** ${client.ws.ping}ms`,
-          `⏱️ **Uptime:** ${formatUptime(client.uptime)}`,
-          `💾 **RAM:** ${formatBytes(process.memoryUsage().rss)}`
+          `**Rendimiento**`,
+          `**Ping:** ${client.ws.ping}ms`,
+          `**Uptime:** ${formatUptime(client.uptime)}`,
+          `**RAM:** ${formatBytes(process.memoryUsage().rss)}`
         ].join('\n'),
         footer: {
-          text: `Actualizado: ${new Date().toLocaleString()}`,
-          icon: client.user.displayAvatarURL()
+          text: `Solicitado por ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL()
         }
       });
 
@@ -419,7 +421,7 @@ export default {
       const guild = client.guilds.cache.get(guildId);
       if (!guild) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No encontré el servidor con ID: \`${guildId}\``)],
+          embeds: [errorEmbed(`No encontré el servidor con ID: \`${guildId}\``)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -429,20 +431,20 @@ export default {
         targetChannel = guild.channels.cache.get(channelId);
         if (!targetChannel) {
           return interaction.reply({
-            embeds: [errorEmbed(`❌ No encontré el canal con ID: \`${channelId}\` en ${guild.name}`)],
+            embeds: [errorEmbed(`No encontré el canal con ID: \`${channelId}\` en ${guild.name}`)],
             flags: MessageFlags.Ephemeral
           });
         }
       } else {
         targetChannel = guild.channels.cache.find(c => 
           c.isTextBased() && 
-          (c.name === 'general' || c.name === 'general-chat' || c.name === 'chat' || c.name === '💬')
+          (c.name === 'general' || c.name === 'general-chat' || c.name === 'chat')
         ) || guild.channels.cache.find(c => c.isTextBased());
       }
 
       if (!targetChannel || !targetChannel.isTextBased()) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No encontré un canal de texto válido en ${guild.name}`)],
+          embeds: [errorEmbed(`No encontré un canal de texto válido en ${guild.name}`)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -450,7 +452,7 @@ export default {
       const botPerms = targetChannel.permissionsFor(guild.members.me);
       if (!botPerms.has('SendMessages') || !botPerms.has('EmbedLinks')) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No tengo permisos para enviar mensajes en ${targetChannel}`)],
+          embeds: [errorEmbed(`No tengo permisos para enviar mensajes en ${targetChannel}`)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -458,24 +460,23 @@ export default {
       try {
         const embed = createEmbed({
           color: COLORS.OWNER,
-          title: '📢 Anuncio del Dueño',
+          title: 'Anuncio del dueño',
           description: message,
           footer: {
             text: `Enviado por ${interaction.user.tag}`,
             icon: interaction.user.displayAvatarURL()
-          },
-          timestamp: true
+          }
         });
 
         await targetChannel.send({ embeds: [embed] });
 
         return interaction.reply({
-          embeds: [successEmbed(`✅ Mensaje enviado a **${guild.name}** en ${targetChannel}`)],
+          embeds: [successEmbed(`Mensaje enviado a **${guild.name}** en ${targetChannel}`)],
           flags: MessageFlags.Ephemeral
         });
       } catch (err) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ No pude enviar el mensaje: ${err.message}`)],
+          embeds: [errorEmbed(`No pude enviar el mensaje: ${err.message}`)],
           flags: MessageFlags.Ephemeral
         });
       }

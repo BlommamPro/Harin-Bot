@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
+import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 
 export default {
@@ -17,7 +18,7 @@ export default {
   COOLDOWN: 0,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const input = interaction.options.getString('cantidad').toLowerCase().trim();
@@ -30,7 +31,7 @@ export default {
     } else {
       amount = parseInt(input, 10);
       if (isNaN(amount) || amount <= 0) {
-        return interaction.editReply({ embeds: [errorEmbed('Introduce una cantidad válida o `all`.')] });
+        return interaction.editReply({ embeds: [errorEmbed('Introduce una cantidad válida o "all".')] });
       }
     }
 
@@ -41,20 +42,23 @@ export default {
     if (amount > currentBank) amount = currentBank;
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, {
-      $inc: { balance: amount, bank: -amount }
+      $inc: { balance: amount, bank: -amount },
     });
 
     const newWallet = (economy?.balance || 0) + amount;
     const newBank = currentBank - amount;
 
-    const embed = successEmbed(
-      `Retiraste **${amount} coins** del banco.\n\n` +
-      `💰 En mano: **${newWallet}**\n` +
-      `🏦 Banco: **${newBank}**\n` +
-      `📊 Total: **${newWallet + newBank}**`
-    );
-    embed.setTitle('🏦 Retiro Exitoso');
+    const description = [
+      header('🏦', 'Retiro exitoso'),
+      block([
+        kv('Retirado', `\`${formatNumber(amount)} coins\``),
+        kv('En mano', `\`${formatNumber(newWallet)} coins\``),
+        kv('Banco', `\`${formatNumber(newBank)} coins\``),
+        kv('Total', `\`${formatNumber(newWallet + newBank)} coins\``),
+      ]),
+    ].join('\n');
 
+    const embed = successEmbed(description);
     return interaction.editReply({ embeds: [embed] });
-  }
+  },
 };

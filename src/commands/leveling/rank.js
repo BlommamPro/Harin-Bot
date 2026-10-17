@@ -1,6 +1,8 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
-import { createProgressBar, formatPercentage } from '../../utils/embedDecorations.js';
+import {
+  header, block, kv, createProgressBar, formatPercentage, formatNumber,
+} from '../../utils/embedDecorations.js';
 import { getGuildLevel, getXpForLevel } from '../../utils/levelSystem.js';
 import { getUserData } from '../../utils/guildData.js';
 
@@ -34,31 +36,35 @@ export default {
   COOLDOWN: 5,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const target = interaction.options.getUser('usuario') || interaction.user;
     const type = interaction.options.getString('tipo') || 'guild';
 
     if (type === 'global') {
       const data = await getUserData(target.id, target.username);
       const xpNeeded = getGlobalXpForLevel(data.level);
-      const progressBar = createProgressBar(data.xp, xpNeeded, 20);
-      const percentage = formatPercentage(data.xp, xpNeeded);
+      const bar = createProgressBar(data.xp, xpNeeded, 16);
+      const pct = formatPercentage(data.xp, xpNeeded);
+
+      const description = [
+        header('🌍', 'Progreso global'),
+        block([
+          kv('Nivel', `\`${data.level}\``),
+          kv('XP', `\`${formatNumber(data.xp)} / ${formatNumber(xpNeeded)}\``),
+          `\`${bar}\` **${pct}%**`,
+          kv('Mensajes', `\`${formatNumber(data.messages)}\``),
+        ]),
+      ].join('\n');
 
       const embed = createEmbed({
         color: COLORS.LEVELING,
-        title: `🌍 Rango Global de ${target.username}`,
+        title: `🌍 ${target.username}`,
         thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
-        description: [
-          `⭐ **Nivel:** ${data.level}`,
-          `✨ **XP:** ${data.xp} / ${xpNeeded}`,
-          `📈 **Progreso:** \`${progressBar}\` ${percentage}%`,
-          `💬 **Mensajes:** ${data.messages}`,
-          `💰 **Dinero:** ${data.balance} coins`
-        ].join('\n'),
+        description,
         footer: {
           text: `Solicitado por ${interaction.user.username}`,
-          icon: interaction.user.displayAvatarURL()
-        }
+          icon: interaction.user.displayAvatarURL(),
+        },
       });
 
       return interaction.reply({ embeds: [embed] });
@@ -66,25 +72,30 @@ export default {
 
     const data = await getGuildLevel(interaction.guildId, target.id);
     const xpNeeded = getXpForLevel(data.level);
-    const progressBar = createProgressBar(data.xp, xpNeeded, 20);
-    const percentage = formatPercentage(data.xp, xpNeeded);
+    const bar = createProgressBar(data.xp, xpNeeded, 16);
+    const pct = formatPercentage(data.xp, xpNeeded);
+
+    const description = [
+      header('🏠', `Progreso en ${interaction.guild.name}`),
+      block([
+        kv('Nivel', `\`${data.level}\``),
+        kv('XP', `\`${formatNumber(data.xp)} / ${formatNumber(xpNeeded)}\``),
+        `\`${bar}\` **${pct}%**`,
+        kv('Mensajes', `\`${formatNumber(data.messages)}\``),
+      ]),
+    ].join('\n');
 
     const embed = createEmbed({
       color: COLORS.LEVELING,
-      title: `🏠 Rango de ${target.username} en ${interaction.guild.name}`,
+      title: `🏠 ${target.username}`,
       thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
-      description: [
-        `⭐ **Nivel:** ${data.level}`,
-        `✨ **XP:** ${data.xp} / ${xpNeeded}`,
-        `📈 **Progreso:** \`${progressBar}\` ${percentage}%`,
-        `💬 **Mensajes:** ${data.messages}`
-      ].join('\n'),
+      description,
       footer: {
         text: `Solicitado por ${interaction.user.username}`,
-        icon: interaction.user.displayAvatarURL()
-      }
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     await interaction.reply({ embeds: [embed] });
-  }
+  },
 };

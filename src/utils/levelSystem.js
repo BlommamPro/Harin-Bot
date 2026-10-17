@@ -1,5 +1,6 @@
 import { GuildLevel } from "../models/GuildLevel.js";
 import { LevelConfig } from "../models/LevelConfig.js";
+import { logger } from "./logger.js";
 
 export async function getGuildLevel(guildId, userId) {
   let data = await GuildLevel.findOne({ guildId, userId });

@@ -1,11 +1,19 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
-import { getGuildData } from '../../utils/guildData.js';
+import { header, block, kv, formatRelativeTime, formatNumber } from '../../utils/embedDecorations.js';
+
+const VERIFICATION_LEVELS = {
+  NONE: 'Ninguno',
+  LOW: 'Bajo',
+  MEDIUM: 'Medio',
+  HIGH: 'Alto',
+  VERY_HIGH: 'Muy alto',
+};
 
 export default {
   CMD: new SlashCommandBuilder()
     .setName('serverinfo')
-    .setDescription('📊 Muestra información detallada del servidor')
+    .setDescription('Muestra información detallada del servidor')
     .setDMPermission(false),
 
   PERMISSIONS: [],
@@ -14,65 +22,67 @@ export default {
   COOLDOWN: 5,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const guild = interaction.guild;
-    
+
     const totalMembers = guild.memberCount;
     const onlineMembers = guild.members.cache.filter(m => m.presence?.status !== 'offline').size;
     const botCount = guild.members.cache.filter(m => m.user.bot).size;
     const humanCount = totalMembers - botCount;
-    
+
     const channels = guild.channels.cache;
     const textChannels = channels.filter(c => c.isTextBased()).size;
     const voiceChannels = channels.filter(c => c.isVoiceBased()).size;
     const categories = channels.filter(c => c.type === 4).size;
-    
-    const roles = guild.roles.cache;
-    const emojis = guild.emojis.cache;
-    const stickers = guild.stickers.cache;
 
-    const verificationLevels = {
-      NONE: 'Ninguno',
-      LOW: 'Bajo',
-      MEDIUM: 'Medio',
-      HIGH: 'Alto',
-      VERY_HIGH: 'Muy Alto'
-    };
+    const description = [
+      header('🏠', 'Servidor'),
+      block([
+        kv('Nombre', guild.name),
+        kv('ID', `\`${guild.id}\``),
+        kv('Dueño', `<@${guild.ownerId}>`),
+        kv('Creado', formatRelativeTime(guild.createdTimestamp)),
+        kv('Bot unido', formatRelativeTime(guild.joinedTimestamp)),
+      ]),
+      '',
+      header('👥', 'Miembros'),
+      block([
+        kv('Total', `\`${formatNumber(totalMembers)}\``),
+        kv('Humanos', `\`${formatNumber(humanCount)}\``),
+        kv('Bots', `\`${formatNumber(botCount)}\``),
+        kv('En línea', `\`${formatNumber(onlineMembers)}\``),
+      ]),
+      '',
+      header('📢', 'Canales'),
+      block([
+        kv('Total', `\`${formatNumber(channels.size)}\``),
+        kv('Texto', `\`${formatNumber(textChannels)}\``),
+        kv('Voz', `\`${formatNumber(voiceChannels)}\``),
+        kv('Categorías', `\`${formatNumber(categories)}\``),
+      ]),
+      '',
+      header('🎨', 'Recursos'),
+      block([
+        kv('Roles', `\`${formatNumber(guild.roles.cache.size)}\``),
+        kv('Emojis', `\`${formatNumber(guild.emojis.cache.size)}\``),
+        kv('Stickers', `\`${formatNumber(guild.stickers.cache.size)}\``),
+      ]),
+      '',
+      header('🔒', 'Configuración'),
+      block([kv('Verificación', VERIFICATION_LEVELS[guild.verificationLevel] || 'Desconocido')]),
+    ].join('\n');
 
     const embed = createEmbed({
       color: COLORS.GENERAL,
-      title: `📊 ${guild.name}`,
+      title: `🏠 ${guild.name}`,
       thumbnail: guild.iconURL({ dynamic: true, size: 256 }),
-      description: [
-        `🆔 **ID:** \`${guild.id}\``,
-        `👑 **Dueño:** <@${guild.ownerId}>`,
-        `📅 **Creado:** <t:${Math.floor(guild.createdTimestamp / 1000)}:F>`,
-        `📅 **Bot unido:** <t:${Math.floor(guild.joinedTimestamp / 1000)}:R>`,
-        '',
-        `**👥 Miembros**`,
-        `🔹 **Total:** ${totalMembers}`,
-        `🔹 **Humanos:** ${humanCount}`,
-        `🔹 **Bots:** ${botCount}`,
-        `🔹 **En línea:** ${onlineMembers}`,
-        '',
-        `**📢 Canales**`,
-        `🔹 **Total:** ${channels.size}`,
-        `🔹 **Texto:** ${textChannels}`,
-        `🔹 **Voz:** ${voiceChannels}`,
-        `🔹 **Categorías:** ${categories}`,
-        '',
-        `**⚙️ Configuración**`,
-        `🔹 **Roles:** ${roles.size}`,
-        `🔹 **Emojis:** ${emojis.size}`,
-        `🔹 **Stickers:** ${stickers.size}`,
-        `🔹 **Verificación:** ${verificationLevels[guild.verificationLevel] || 'Desconocido'}`
-      ].join('\n'),
+      description,
       footer: {
         text: `Solicitado por ${interaction.user.username}`,
-        icon: interaction.user.displayAvatarURL()
-      }
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     await interaction.reply({ embeds: [embed] });
-  }
+  },
 };

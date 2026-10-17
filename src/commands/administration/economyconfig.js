@@ -5,18 +5,18 @@ import { getEconomyConfig, updateEconomyConfig } from '../../utils/economyConfig
 export default {
   CMD: new SlashCommandBuilder()
     .setName('economyconfig')
-    .setDescription('⚙️ Configura la economía de este servidor')
+    .setDescription('Configura la economía de este servidor')
     .setDMPermission(false)
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 
     .addSubcommand(sub =>
       sub.setName('view')
-         .setDescription('📋 Ver la configuración actual')
+         .setDescription('Ver la configuración actual')
     )
 
     .addSubcommand(sub =>
       sub.setName('cooldowns')
-         .setDescription('⏱️ Ajustar cooldowns')
+         .setDescription('Ajustar cooldowns de los comandos')
          .addIntegerOption(opt =>
            opt.setName('daily')
               .setDescription('Cooldown de /daily en minutos')
@@ -70,7 +70,7 @@ export default {
 
     .addSubcommand(sub =>
       sub.setName('rewards')
-         .setDescription('💰 Ajustar recompensas')
+         .setDescription('Ajustar recompensas de los comandos')
          .addIntegerOption(opt =>
            opt.setName('daily')
               .setDescription('Recompensa base de /daily')
@@ -110,7 +110,7 @@ export default {
 
     .addSubcommand(sub =>
       sub.setName('bet_limits')
-         .setDescription('🎲 Ajustar apuestas mínimas y máximas')
+         .setDescription('Ajustar apuestas mínimas y máximas')
          .addIntegerOption(opt =>
            opt.setName('min')
               .setDescription('Apuesta mínima')
@@ -129,7 +129,7 @@ export default {
 
     .addSubcommand(sub =>
       sub.setName('toggle')
-         .setDescription('🔧 Activar o desactivar toda la economía del servidor')
+         .setDescription('Activar o desactivar toda la economía del servidor')
          .addBooleanOption(opt =>
            opt.setName('activar')
               .setDescription('true = activado, false = desactivado')
@@ -139,7 +139,7 @@ export default {
 
     .addSubcommand(sub =>
       sub.setName('reset')
-         .setDescription('🔄 Reiniciar la configuración a valores por defecto')
+         .setDescription('Reiniciar la configuración a valores por defecto')
          .addBooleanOption(opt =>
            opt.setName('confirmar')
               .setDescription('Escribe true para confirmar')
@@ -162,32 +162,32 @@ export default {
 
       const embed = createEmbed({
         color: COLORS.ECONOMY,
-        title: `⚙️ Configuración de Economía — ${interaction.guild.name}`,
+        title: `Configuración de economía`,
         description: [
-          `**⏱️ Cooldowns**`,
-          `• /daily: \`${config.dailyCooldownMinutes} min\``,
-          `• /work: \`${config.workCooldownMinutes} min\``,
-          `• /crime: \`${config.crimeCooldownMinutes} min\``,
-          `• /rob: \`${config.robCooldownMinutes} min\``,
-          `• /coinflip: \`${config.coinflipCooldownSeconds}s\``,
-          `• /slots: \`${config.slotsCooldownSeconds}s\``,
-          `• /blackjack: \`${config.blackjackCooldownSeconds}s\``,
-          `• /pay: \`${config.payCooldownMinutes} min\``,
+          `**Cooldowns**`,
+          `• /daily: ${config.dailyCooldownMinutes} min`,
+          `• /work: ${config.workCooldownMinutes} min`,
+          `• /crime: ${config.crimeCooldownMinutes} min`,
+          `• /rob: ${config.robCooldownMinutes} min`,
+          `• /coinflip: ${config.coinflipCooldownSeconds}s`,
+          `• /slots: ${config.slotsCooldownSeconds}s`,
+          `• /blackjack: ${config.blackjackCooldownSeconds}s`,
+          `• /pay: ${config.payCooldownMinutes} min`,
           '',
-          `**💰 Recompensas**`,
-          `• /daily base: \`${config.dailyReward}\``,
-          `• Streak bonus: \`${config.dailyStreakBonus}\``,
-          `• /work rango: \`${config.workMinReward} - ${config.workMaxReward}\``,
-          `• Balance inicial: \`${config.startingBalance}\``,
+          `**Recompensas**`,
+          `• /daily base: ${config.dailyReward}`,
+          `• Streak bonus: ${config.dailyStreakBonus}`,
+          `• /work rango: ${config.workMinReward} - ${config.workMaxReward}`,
+          `• Balance inicial: ${config.startingBalance}`,
           '',
-          `**🎲 Apuestas**`,
-          `• Mínima: \`${config.minBet}\``,
-          `• Máxima: \`${config.maxBet}\``,
+          `**Apuestas**`,
+          `• Mínima: ${config.minBet}`,
+          `• Máxima: ${config.maxBet}`,
           '',
-          `**🔧 Estado:** ${config.economyEnabled ? '✅ Activada' : '❌ Desactivada'}`
+          `**Estado:** ${config.economyEnabled ? 'Activada' : 'Desactivada'}`
         ].join('\n'),
         footer: {
-          text: `Usa /economyconfig para ajustar`,
+          text: `Solicitado por ${interaction.user.username}`,
           icon: interaction.user.displayAvatarURL()
         }
       });
@@ -215,7 +215,7 @@ export default {
 
       if (Object.keys(update).length === 0) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes especificar al menos un cooldown.')],
+          embeds: [errorEmbed('Debes especificar al menos un cooldown.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -224,8 +224,8 @@ export default {
 
       return interaction.reply({
         embeds: [successEmbed(
-          `✅ Cooldowns actualizados:\n` +
-          Object.entries(update).map(([k, v]) => `• ${k}: \`${v}\``).join('\n')
+          `**Cooldowns actualizados:**\n` +
+          Object.entries(update).map(([k, v]) => `• ${k}: ${v}`).join('\n')
         )]
       });
     }
@@ -246,14 +246,14 @@ export default {
 
       if (Object.keys(update).length === 0) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes especificar al menos una recompensa.')],
+          embeds: [errorEmbed('Debes especificar al menos una recompensa.')],
           flags: MessageFlags.Ephemeral
         });
       }
 
       if (update.workMinReward && update.workMaxReward && update.workMinReward > update.workMaxReward) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ La recompensa mínima no puede ser mayor que la máxima.')],
+          embeds: [errorEmbed('La recompensa mínima no puede ser mayor que la máxima.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -262,8 +262,8 @@ export default {
 
       return interaction.reply({
         embeds: [successEmbed(
-          `✅ Recompensas actualizadas:\n` +
-          Object.entries(update).map(([k, v]) => `• ${k}: \`${v}\``).join('\n')
+          `**Recompensas actualizadas:**\n` +
+          Object.entries(update).map(([k, v]) => `• ${k}: ${v}`).join('\n')
         )]
       });
     }
@@ -278,7 +278,7 @@ export default {
 
       if (Object.keys(update).length === 0) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes especificar al menos un límite.')],
+          embeds: [errorEmbed('Debes especificar al menos un límite.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -289,7 +289,7 @@ export default {
 
       if (finalMin > finalMax) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ La apuesta mínima no puede ser mayor que la máxima.')],
+          embeds: [errorEmbed('La apuesta mínima no puede ser mayor que la máxima.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -298,9 +298,9 @@ export default {
 
       return interaction.reply({
         embeds: [successEmbed(
-          `✅ Límites de apuesta actualizados:\n` +
-          `• Mínima: \`${finalMin}\`\n` +
-          `• Máxima: \`${finalMax}\``
+          `**Límites de apuesta actualizados:**\n` +
+          `• Mínima: ${finalMin}\n` +
+          `• Máxima: ${finalMax}`
         )]
       });
     }
@@ -311,7 +311,7 @@ export default {
 
       return interaction.reply({
         embeds: [successEmbed(
-          `🔧 Economía ${enable ? '✅ **activada**' : '❌ **desactivada**'} en este servidor.`
+          `Economía ${enable ? 'activada' : 'desactivada'} en este servidor.`
         )]
       });
     }
@@ -320,7 +320,7 @@ export default {
       const confirm = interaction.options.getBoolean('confirmar');
       if (!confirm) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes confirmar con `confirmar:true`.')],
+          embeds: [errorEmbed('Debes confirmar con `confirmar:true`.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -345,7 +345,7 @@ export default {
       });
 
       return interaction.reply({
-        embeds: [successEmbed('🔄 Configuración de economía reiniciada a valores por defecto.')]
+        embeds: [successEmbed('Configuración de economía reiniciada a valores por defecto.')]
       });
     }
   }

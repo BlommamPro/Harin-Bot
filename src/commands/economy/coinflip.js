@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
+import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { applyBetLuck } from '../../utils/applyUpgrades.js';
@@ -18,8 +19,8 @@ export default {
     .addStringOption(opt =>
       opt.setName('lado').setDescription('Cara o cruz').setRequired(true)
         .addChoices(
-          { name: '🪙 Cara', value: 'cara' },
-          { name: '❌ Cruz', value: 'cruz' }
+          { name: 'Cara', value: 'cara' },
+          { name: 'Cruz', value: 'cruz' }
         )
     ),
 
@@ -29,13 +30,11 @@ export default {
   COOLDOWN: 0,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) {
-      return interaction.editReply({ embeds: economyDisabled.embeds });
-    }
+    if (economyDisabled) return interaction.editReply({ embeds: economyDisabled.embeds });
 
     const amount = interaction.options.getInteger('cantidad');
     const side = interaction.options.getString('lado');
@@ -43,23 +42,23 @@ export default {
     const config = await getEconomyConfig(interaction.guildId);
 
     if (amount < config.minBet) {
-      return interaction.editReply({ embeds: [errorEmbed(`La apuesta mínima es **${config.minBet}** coins.`)] });
+      return interaction.editReply({ embeds: [errorEmbed(`La apuesta mínima es ${config.minBet} coins.`)] });
     }
     if (amount > config.maxBet) {
-      return interaction.editReply({ embeds: [errorEmbed(`La apuesta máxima es **${config.maxBet}** coins.`)] });
+      return interaction.editReply({ embeds: [errorEmbed(`La apuesta máxima es ${config.maxBet} coins.`)] });
     }
 
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
 
     if ((economy?.balance || 0) < amount) {
       return interaction.editReply({
-        embeds: [errorEmbed(`No tienes suficientes coins. Tienes **${economy.balance}** y apostaste **${amount}**.`)]
+        embeds: [errorEmbed(`No tienes suficientes coins. Tienes ${economy.balance} y apostaste ${amount}.`)],
       });
     }
 
     const cd = await checkDbCooldown(interaction.user.id, `coinflip_${interaction.guildId}`, config.coinflipCooldownSeconds / 60);
     if (cd.onCooldown) {
-      return interaction.editReply({ embeds: [errorEmbed(`Espera un momento. <t:${cd.nextTimestamp}:R>.`)] });
+      return interaction.editReply({ embeds: [errorEmbed(`Espera un momento. Vuelve <t:${cd.nextTimestamp}:R>.`)] });
     }
 
     const result = Math.random() < 0.5 ? 'cara' : 'cruz';
@@ -67,20 +66,28 @@ export default {
 
     await setDbCooldown(interaction.user.id, `coinflip_${interaction.guildId}`);
 
+    const lines = [
+      header('🪙', `Resultado: ${result.toUpperCase()}`),
+      block([
+        kv('Tu elección', side.toUpperCase()),
+        won
+          ? kv('Ganancia', `\`${formatNumber(applyBetLuck(amount, economy.upgrades))} coins\``)
+          : kv('Pérdida', `\`${formatNumber(amount)} coins\``),
+      ]),
+    ];
+
     if (won) {
       const winnings = applyBetLuck(amount, economy.upgrades);
       await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: winnings } });
       await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, winnings);
 
-      const embed = successEmbed(`¡Salió **${result.toUpperCase()}**! Ganaste **${winnings} coins**.`);
-      embed.setTitle('🪙 ¡Ganaste!');
-      return interaction.editReply({ embeds: [embed] });
-    } else {
-      await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -amount } });
-
-      const embed = errorEmbed(`Salió **${result.toUpperCase()}**... Perdiste **${amount} coins**.`);
-      embed.setTitle('💀 Perdiste');
+      const embed = successEmbed(lines.join('\n'), '🪙 ¡Ganaste!');
       return interaction.editReply({ embeds: [embed] });
     }
-  }
+
+    await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -amount } });
+
+    const embed = errorEmbed(lines.join('\n'), '🪙 Perdiste');
+    return interaction.editReply({ embeds: [embed] });
+  },
 };

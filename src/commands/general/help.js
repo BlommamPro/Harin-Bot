@@ -1,36 +1,22 @@
 import { SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder, MessageFlags } from 'discord.js';
-import { createEmbed } from '../../utils/embeds.js';
+import { createEmbed, COLORS } from '../../utils/embeds.js';
+import { header, block, kv } from '../../utils/embedDecorations.js';
 
-const DEFAULT_EMOJIS = {
-  general: '🌐',
-  moderation: '🛡️',
-  administration: '⚙️',
-  fun: '🎉',
-  economy: '💰',
-  music: '🎵',
-  utility: '🛠️',
-  owner: '👑',
-  nsfw: '🔞',
-  tickets: '🎫',
-  giveaways: '🎁',
-  leveling: '⭐',
-  welcome: '👋',
-  logs: '📋'
+const CATEGORY_INFO = {
+  general: { label: 'General', emoji: '🌐', description: 'Comandos generales' },
+  moderation: { label: 'Moderación', emoji: '🛡️', description: 'Herramientas de moderación' },
+  administration: { label: 'Administración', emoji: '⚙️', description: 'Configuración del bot' },
+  economy: { label: 'Economía', emoji: '💰', description: 'Sistema de economía' },
+  leveling: { label: 'Niveles', emoji: '⭐', description: 'Sistema de niveles' },
+  giveaways: { label: 'Sorteos', emoji: '🎁', description: 'Sistema de sorteos' },
+  owner: { label: 'Dueño', emoji: '👑', description: 'Comandos exclusivos del dueño' },
 };
 
 function getCategoryInfo(catName) {
-  const name = catName.toLowerCase();
-  if (DEFAULT_EMOJIS[name]) {
-    return {
-      label: name.charAt(0).toUpperCase() + name.slice(1),
-      emoji: DEFAULT_EMOJIS[name],
-      description: `Comandos de ${name}`
-    };
-  }
-  return {
-    label: name.charAt(0).toUpperCase() + name.slice(1),
+  return CATEGORY_INFO[catName] || {
+    label: catName.charAt(0).toUpperCase() + catName.slice(1),
     emoji: '📁',
-    description: `Comandos de ${name}`
+    description: `Comandos de ${catName}`,
   };
 }
 
@@ -45,23 +31,34 @@ export default {
   COOLDOWN: 5,
   GUILD_ONLY: false,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const categories = new Map();
 
-    for (const [name, cmd] of client.slashCommands) {
+    for (const [, cmd] of client.slashCommands) {
       const cat = (cmd.CATEGORY || 'general').toLowerCase();
       categories.set(cat, (categories.get(cat) || 0) + 1);
     }
 
+    const description = [
+      'Selecciona una categoría en el menú para ver sus comandos.',
+      '',
+      header('📊', 'Resumen'),
+      block([
+        kv('Comandos totales', `\`${client.slashCommands.size}\``),
+        kv('Categorías', `\`${categories.size}\``),
+      ]),
+      '',
+      `[Política de Privacidad](https://blommampro.github.io/harin-bot-legal/privacy)`,
+    ].join('\n');
+
     const embed = createEmbed({
-      title: '📚 Menú de Ayuda',
-      description: [
-        `Selecciona una categoría del menú de abajo para ver sus comandos.`,
-        ``,
-        `**Total:** ${client.slashCommands.size} comandos en ${categories.size} categorías`,
-        ``,
-        `[Política de Privacidad](https://blommampro.github.io/harin-bot-legal/privacy)`
-      ].join('\n')
+      color: COLORS.INFO,
+      title: '📖 Menú de ayuda',
+      description,
+      footer: {
+        text: `Solicitado por ${interaction.user.username}`,
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     const options = [];
@@ -85,6 +82,10 @@ export default {
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
 
-    await interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
-  }
+    await interaction.reply({
+      embeds: [embed],
+      components: [row],
+      flags: MessageFlags.Ephemeral,
+    });
+  },
 };

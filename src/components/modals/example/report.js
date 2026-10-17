@@ -1,6 +1,5 @@
-import { ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder , MessageFlags} from 'discord.js';
+import { MessageFlags } from 'discord.js';
 import { successEmbed } from '../../../utils/embeds.js';
-
 
 export default {
   customId: 'example-report',
@@ -18,7 +17,9 @@ export default {
 
     console.log(`Reporte: ${reportedUserId || 'General'} - ${reason} - ${details}`);
 
-    await interaction.reply({ 
-      embeds: [successEmbed('Reporte enviado correctamente. Gracias por tu colaboración.')], flags: MessageFlags.Ephemeral });
+    return interaction.reply({
+      embeds: [successEmbed('Reporte enviado correctamente. Gracias por tu colaboración.')],
+      flags: MessageFlags.Ephemeral
+    });
   }
 };

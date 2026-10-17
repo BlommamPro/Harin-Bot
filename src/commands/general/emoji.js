@@ -10,12 +10,12 @@ export default {
     .setDMPermission(false)
     .addStringOption(opt =>
       opt.setName('tipo')
-         .setDescription('Filtrar por tipo de emoji')
+         .setDescription('Filtrar por tipo')
          .setRequired(false)
          .addChoices(
-           { name: '🎨 Todos', value: 'all' },
-           { name: '🖼️ Estáticos', value: 'static' },
-           { name: '✨ Animados', value: 'animated' }
+           { name: 'Todos', value: 'all' },
+           { name: 'Estáticos', value: 'static' },
+           { name: 'Animados', value: 'animated' }
          )
     ),
 
@@ -39,7 +39,9 @@ export default {
 
     if (emojis.length === 0) {
       return interaction.reply({
-        embeds: [errorEmbed('Este servidor no tiene emojis' + (filter !== 'all' ? ' de ese tipo' : '') + '.')],
+        embeds: [errorEmbed(
+          `Este servidor no tiene emojis${filter !== 'all' ? ' de ese tipo' : ''}.`
+        )],
         flags: MessageFlags.Ephemeral
       });
     }
@@ -68,15 +70,15 @@ export default {
 
       return createEmbed({
         color: COLORS.GENERAL,
-        title: `😀 Emojis de ${guild.name}`,
+        title: `Emojis de ${guild.name}`,
         description: lines.join('\n'),
         fields: [
-          { name: '🖼️ Estáticos', value: `\`${staticCount}\``, inline: true },
-          { name: '✨ Animados', value: `\`${animatedCount}\``, inline: true },
-          { name: '📊 Total', value: `\`${emojis.length}\``, inline: true }
+          { name: 'Estáticos', value: `\`${staticCount}\``, inline: true },
+          { name: 'Animados', value: `\`${animatedCount}\``, inline: true },
+          { name: 'Total', value: `\`${emojis.length}\``, inline: true }
         ],
         footer: {
-          text: `Página ${page + 1} de ${totalPages} • ${emojis.length} emojis • ${interaction.user.username}`,
+          text: `Página ${page + 1} de ${totalPages} • Solicitado por ${interaction.user.username}`,
           icon: interaction.user.displayAvatarURL()
         }
       });
@@ -84,20 +86,18 @@ export default {
 
     const generateButtons = (page) => {
       const row = new ActionRowBuilder();
-
       row.addComponents(
         new ButtonBuilder()
           .setCustomId(`emojis-prev-{${interaction.user.id}}`)
-          .setLabel('◀ Anterior')
+          .setLabel('Anterior')
           .setStyle(ButtonStyle.Primary)
           .setDisabled(page === 0),
         new ButtonBuilder()
           .setCustomId(`emojis-next-{${interaction.user.id}}`)
-          .setLabel('Siguiente ▶')
+          .setLabel('Siguiente')
           .setStyle(ButtonStyle.Primary)
           .setDisabled(page === totalPages - 1)
       );
-
       return row;
     };
 

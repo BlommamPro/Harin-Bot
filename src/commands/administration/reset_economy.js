@@ -8,13 +8,13 @@ import { logger } from '../../utils/logger.js';
 export default {
   CMD: new SlashCommandBuilder()
     .setName('reset_economy')
-    .setDescription('🔄 Reinicia la economía del servidor (¡CUIDADO!)')
+    .setDescription('Reinicia la economía del servidor')
     .setDMPermission(false)
     .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
 
     .addSubcommand(sub =>
       sub.setName('all')
-         .setDescription('🗑️ Borrar TODA la economía del servidor')
+         .setDescription('Borrar toda la economía del servidor')
          .addBooleanOption(opt =>
            opt.setName('confirmar')
               .setDescription('Escribe true para confirmar')
@@ -24,7 +24,7 @@ export default {
 
     .addSubcommand(sub =>
       sub.setName('user')
-         .setDescription('👤 Reiniciar la economía de UN usuario')
+         .setDescription('Reiniciar la economía de un usuario')
          .addUserOption(opt =>
            opt.setName('usuario')
               .setDescription('Usuario a reiniciar')
@@ -39,7 +39,7 @@ export default {
 
     .addSubcommand(sub =>
       sub.setName('stats')
-         .setDescription('📊 Ver cuánto dinero hay en circulación en este servidor')
+         .setDescription('Ver cuánto dinero hay en circulación en este servidor')
     ),
 
   PERMISSIONS: ['Administrator'],
@@ -55,7 +55,7 @@ export default {
       const confirm = interaction.options.getBoolean('confirmar');
       if (!confirm) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes confirmar con `confirmar:true`.')],
+          embeds: [errorEmbed('Debes confirmar con `confirmar:true`.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -70,20 +70,26 @@ export default {
         );
 
         const embed = successEmbed(
-          `🔄 Economía del servidor reiniciada.\n\n` +
-          `**Datos eliminados:**\n` +
-          `• ${economyResult.deletedCount} cuentas de economía\n` +
-          `• ${rankingResult.deletedCount} registros del ranking semanal\n` +
-          `• ${achievementsResult.deletedCount} logros desbloqueados\n\n` +
-          `💡 Los usuarios empezarán de cero con el nuevo balance inicial.`
+          [
+            `**Datos eliminados:**`,
+            `• ${economyResult.deletedCount} cuentas de economía`,
+            `• ${rankingResult.deletedCount} registros del ranking semanal`,
+            `• ${achievementsResult.deletedCount} logros desbloqueados`,
+            '',
+            `Los usuarios empezarán de cero con el nuevo balance inicial.`
+          ].join('\n')
         );
-        embed.setTitle('🗑️ Economía Reiniciada');
+        embed.setTitle('Economía reiniciada');
+        embed.setFooter({
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL()
+        });
 
         return interaction.reply({ embeds: [embed] });
       } catch (err) {
         logger.error('Error al reiniciar economía:', err);
         return interaction.reply({
-          embeds: [errorEmbed(`❌ Error al reiniciar: ${err.message}`)],
+          embeds: [errorEmbed(`Error al reiniciar: ${err.message}`)],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -95,7 +101,7 @@ export default {
 
       if (!confirm) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes confirmar con `confirmar:true`.')],
+          embeds: [errorEmbed('Debes confirmar con `confirmar:true`.')],
           flags: MessageFlags.Ephemeral
         });
       }
@@ -115,19 +121,26 @@ export default {
 
       if (economyResult.deletedCount === 0) {
         return interaction.reply({
-          embeds: [errorEmbed(`❌ ${target} no tiene economía en este servidor.`)],
+          embeds: [errorEmbed(`${target} no tiene economía en este servidor.`)],
           flags: MessageFlags.Ephemeral
         });
       }
 
       const embed = successEmbed(
-        `🔄 Economía de ${target} reiniciada.\n\n` +
-        `• Cuenta de economía eliminada\n` +
-        `• ${rankingResult.deletedCount} registros del ranking eliminados\n` +
-        `• ${achievementsResult.deletedCount} logros eliminados\n\n` +
-        `💡 Empezará de cero la próxima vez que use un comando.`
+        [
+          `**Usuario:** ${target}`,
+          `• Cuenta de economía eliminada`,
+          `• ${rankingResult.deletedCount} registros del ranking eliminados`,
+          `• ${achievementsResult.deletedCount} logros eliminados`,
+          '',
+          `Empezará de cero la próxima vez que use un comando.`
+        ].join('\n')
       );
-      embed.setTitle('🗑️ Economía Reiniciada');
+      embed.setTitle('Economía reiniciada');
+      embed.setFooter({
+        text: `Moderador: ${interaction.user.username}`,
+        icon: interaction.user.displayAvatarURL()
+      });
 
       return interaction.reply({ embeds: [embed] });
     }
@@ -151,7 +164,7 @@ export default {
         return interaction.reply({
           embeds: [createEmbed({
             color: COLORS.INFO,
-            title: '📊 Estadísticas de Economía',
+            title: 'Estadísticas de economía',
             description: 'No hay datos de economía en este servidor todavía.'
           })]
         });
@@ -162,20 +175,20 @@ export default {
 
       const embed = createEmbed({
         color: COLORS.ECONOMY,
-        title: `📊 Economía de ${interaction.guild.name}`,
+        title: `Economía de ${interaction.guild.name}`,
         description: [
-          `**💵 Dinero en circulación**`,
-          `• En mano: \`${data.totalBalance.toLocaleString()} coins\``,
-          `• En bancos: \`${data.totalBank.toLocaleString()} coins\``,
-          `• Total: \`${totalWealth.toLocaleString()} coins\``,
+          `**Dinero en circulación**`,
+          `• En mano: ${data.totalBalance.toLocaleString()} coins`,
+          `• En bancos: ${data.totalBank.toLocaleString()} coins`,
+          `• Total: ${totalWealth.toLocaleString()} coins`,
           '',
-          `**👥 Usuarios**`,
-          `• Con economía: \`${data.userCount}\``,
-          `• Promedio: \`${Math.floor(data.avgBalance).toLocaleString()} coins\``,
-          `• Máximo: \`${data.maxBalance.toLocaleString()} coins\``
+          `**Usuarios**`,
+          `• Con economía: ${data.userCount}`,
+          `• Promedio: ${Math.floor(data.avgBalance).toLocaleString()} coins`,
+          `• Máximo: ${data.maxBalance.toLocaleString()} coins`
         ].join('\n'),
         footer: {
-          text: `Usa /economyconfig para ajustar la economía`,
+          text: `Solicitado por ${interaction.user.username}`,
           icon: interaction.user.displayAvatarURL()
         }
       });

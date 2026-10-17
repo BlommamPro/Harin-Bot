@@ -1,20 +1,21 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { UPGRADES, getUpgradeLevel, getUpgradeCost } from '../../utils/economyConfig.js';
 
 export default {
   CMD: new SlashCommandBuilder()
     .setName('upgrades')
-    .setDescription('📈 Compra mejoras para aumentar tus ganancias')
+    .setDescription('Compra mejoras para aumentar tus ganancias')
     .setDMPermission(false)
     .addSubcommand(sub =>
       sub.setName('view')
-         .setDescription('📋 Ver todas las mejoras disponibles y tu progreso')
+         .setDescription('Ver todas las mejoras disponibles y tu progreso')
     )
     .addSubcommand(sub =>
       sub.setName('buy')
-         .setDescription('🛒 Comprar o subir el nivel de una mejora')
+         .setDescription('Comprar o subir el nivel de una mejora')
          .addStringOption(opt =>
            opt.setName('mejora')
               .setDescription('ID de la mejora a comprar')
@@ -45,8 +46,8 @@ export default {
           const currentLevel = getUpgradeLevel(economy.upgrades, id);
           const cost = getUpgradeCost(economy.upgrades, id);
           return {
-            name: `${config.name} (Nv.${currentLevel}/${config.maxLevel}) — ${cost} coins`,
-            value: id
+            name: `${config.name} (Nv.${currentLevel}/${config.maxLevel}) — ${formatNumber(cost)} coins`,
+            value: id,
           };
         });
 
@@ -57,7 +58,7 @@ export default {
     }
   },
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const sub = interaction.options.getSubcommand();
@@ -70,30 +71,33 @@ export default {
 
         let status = '';
         if (currentLevel >= config.maxLevel) {
-          status = '✅ **MÁXIMO**';
+          status = '**Nivel máximo**';
         } else if (currentLevel === 0) {
-          status = `🔒 Sin comprar — 💰 **${cost}** coins`;
+          status = `Sin comprar — \`${formatNumber(cost)} coins\``;
         } else {
-          status = `Nv. **${currentLevel}/${config.maxLevel}** — Siguiente: 💰 **${cost}** coins`;
+          status = `Nv. ${currentLevel}/${config.maxLevel} — Siguiente: \`${formatNumber(cost)} coins\``;
         }
 
-        return `**${config.name}**\n> *${config.description}*\n> ${status}`;
-      }).join('\n\n');
+        return `**${config.name}**\n-# ${config.description}\n${status}`;
+      });
+
+      const description = [
+        header('💼', 'Mejoras disponibles'),
+        block([kv('Tu balance', `\`${formatNumber(economy.balance)} coins\``)]),
+        '',
+        lines.join('\n\n'),
+        '',
+        '-# Usa `/upgrades buy <mejora>` para comprar.',
+      ].join('\n');
 
       const embed = createEmbed({
         color: COLORS.ECONOMY,
-        title: '📈 Mejoras Disponibles',
-        description: [
-          `💰 **Tu balance:** ${economy.balance} coins`,
-          '',
-          lines,
-          '',
-          `💡 Usa \`/upgrades buy <mejora>\` para comprar.`
-        ].join('\n'),
+        title: '💼 Mejoras',
+        description,
         footer: {
           text: `Solicitado por ${interaction.user.username}`,
-          icon: interaction.user.displayAvatarURL()
-        }
+          icon: interaction.user.displayAvatarURL(),
+        },
       });
 
       return interaction.editReply({ embeds: [embed] });
@@ -104,22 +108,20 @@ export default {
       const config = UPGRADES[upgradeId];
 
       if (!config) {
-        return interaction.editReply({ embeds: [errorEmbed('❌ Esa mejora no existe.')] });
+        return interaction.editReply({ embeds: [errorEmbed('Esa mejora no existe.')] });
       }
 
       const currentLevel = getUpgradeLevel(economy.upgrades, upgradeId);
       if (currentLevel >= config.maxLevel) {
-        return interaction.editReply({ embeds: [errorEmbed(`❌ Ya tienes **${config.name}** al nivel máximo.`)] });
+        return interaction.editReply({ embeds: [errorEmbed(`Ya tienes ${config.name} al nivel máximo.`)] });
       }
 
       const cost = getUpgradeCost(economy.upgrades, upgradeId);
       if ((economy.balance || 0) < cost) {
         return interaction.editReply({
           embeds: [errorEmbed(
-            `❌ No tienes suficientes coins.\n` +
-            `💰 Necesitas: **${cost}** coins\n` +
-            `💵 Tienes: **${economy.balance}** coins`
-          )]
+            `No tienes suficientes coins.\n**Necesitas:** \`${formatNumber(cost)}\`\n**Tienes:** \`${formatNumber(economy.balance)}\``
+          )],
         });
       }
 
@@ -135,7 +137,7 @@ export default {
 
       await updateGuildEconomy(interaction.guildId, interaction.user.id, {
         $inc: { balance: -cost },
-        $set: { upgrades }
+        $set: { upgrades },
       });
 
       const effectText = config.levels.find(l => l.level === newLevel)?.effect;
@@ -145,17 +147,22 @@ export default {
       } else if (['better_job', 'crime_luck', 'rob_skill', 'bet_luck', 'pet', 'hourglass'].includes(upgradeId)) {
         effectFormatted = `+${(effectText * 100).toFixed(0)}%`;
       } else {
-        effectFormatted = `+${effectText} coins`;
+        effectFormatted = `+${formatNumber(effectText)} coins`;
       }
 
-      const embed = successEmbed(
-        `✅ Compraste **${config.name}** — Nv. **${newLevel}/${config.maxLevel}**\n` +
-        `📈 Efecto actual: **${effectFormatted}**\n` +
-        `💰 Balance restante: **${economy.balance - cost}** coins`
-      );
-      embed.setTitle('🎉 ¡Mejora Comprada!');
+      const description = [
+        header('✅', 'Mejora comprada'),
+        block([
+          kv('Mejora', config.name),
+          kv('Nivel', `\`${newLevel}/${config.maxLevel}\``),
+          kv('Efecto', effectFormatted),
+          kv('Coste', `\`${formatNumber(cost)} coins\``),
+          kv('Balance restante', `\`${formatNumber(economy.balance - cost)} coins\``),
+        ]),
+      ].join('\n');
 
+      const embed = successEmbed(description);
       return interaction.editReply({ embeds: [embed] });
     }
-  }
+  },
 };

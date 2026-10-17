@@ -1,5 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { successEmbed, errorEmbed } from '../../utils/embeds.js';
+import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
@@ -14,7 +15,7 @@ function spin() {
   return [
     SLOTS[Math.floor(Math.random() * SLOTS.length)],
     SLOTS[Math.floor(Math.random() * SLOTS.length)],
-    SLOTS[Math.floor(Math.random() * SLOTS.length)]
+    SLOTS[Math.floor(Math.random() * SLOTS.length)],
   ];
 }
 
@@ -33,29 +34,27 @@ export default {
   COOLDOWN: 0,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     await interaction.deferReply();
 
     const economyDisabled = await checkEconomyEnabled(interaction.guildId);
-    if (economyDisabled) {
-      return interaction.editReply({ embeds: economyDisabled.embeds });
-    }
+    if (economyDisabled) return interaction.editReply({ embeds: economyDisabled.embeds });
 
     const amount = interaction.options.getInteger('cantidad');
     const config = await getEconomyConfig(interaction.guildId);
 
     if (amount < config.minBet) {
-      return interaction.editReply({ embeds: [errorEmbed(`La apuesta mínima es **${config.minBet}** coins.`)] });
+      return interaction.editReply({ embeds: [errorEmbed(`La apuesta mínima es ${config.minBet} coins.`)] });
     }
     if (amount > config.maxBet) {
-      return interaction.editReply({ embeds: [errorEmbed(`La apuesta máxima es **${config.maxBet}** coins.`)] });
+      return interaction.editReply({ embeds: [errorEmbed(`La apuesta máxima es ${config.maxBet} coins.`)] });
     }
 
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
 
     if ((economy?.balance || 0) < amount) {
       return interaction.editReply({
-        embeds: [errorEmbed(`No tienes suficientes coins. Tienes **${economy.balance}** y apostaste **${amount}**.`)]
+        embeds: [errorEmbed(`No tienes suficientes coins. Tienes ${economy.balance} y apostaste ${amount}.`)],
       });
     }
 
@@ -66,25 +65,24 @@ export default {
 
     await setDbCooldown(interaction.user.id, `slots_${interaction.guildId}`);
 
-    const result = spin();
-    const [a, b, c] = result;
+    const [a, b, c] = spin();
 
     let baseWinnings = 0;
     let title = '';
     let isWin = false;
 
     if (a === b && b === c) {
-      if (a === '7️⃣') { baseWinnings = amount * 10; title = '🎰 ¡MEGA JACKPOT! 7️⃣7️⃣7️⃣'; }
-      else if (a === '💎') { baseWinnings = amount * 5; title = '💎 ¡DIAMOND JACKPOT!'; }
-      else { baseWinnings = amount * 3; title = '🎉 ¡JACKPOT!'; }
+      if (a === '7️⃣') { baseWinnings = amount * 10; title = 'Mega jackpot · 7️⃣7️⃣7️⃣'; }
+      else if (a === '💎') { baseWinnings = amount * 5; title = 'Diamond jackpot'; }
+      else { baseWinnings = amount * 3; title = 'Jackpot'; }
       isWin = true;
     } else if (a === b || b === c || a === c) {
       baseWinnings = amount * 1.5;
-      title = '✨ ¡Casi! 2 iguales';
+      title = 'Casi · dos iguales';
       isWin = true;
     } else {
       baseWinnings = -amount;
-      title = '😢 Mala suerte';
+      title = 'Mala suerte';
     }
 
     let winnings = baseWinnings;
@@ -95,8 +93,8 @@ export default {
     await updateGuildEconomy(interaction.guildId, interaction.user.id, {
       $inc: {
         balance: netChange,
-        ...(isWin ? { slotsWins: 1 } : {})
-      }
+        ...(isWin ? { slotsWins: 1 } : {}),
+      },
     });
 
     if (isWin && winnings > 0) {
@@ -107,20 +105,29 @@ export default {
     const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
     const display = `| ${a} | ${b} | ${c} |`;
+    const netWin = isWin ? winnings - amount : -amount;
 
-    const embed = isWin
-      ? successEmbed(`${display}\n\nGanaste **${winnings} coins**!`)
-      : errorEmbed(`${display}\n\nPerdiste **${amount} coins**...`);
-
-    embed.setTitle(title);
+    const lines = [
+      header(isWin ? '🎉' : '💀', title),
+      '',
+      display,
+      '',
+      block([
+        kv('Apuesta', `\`${formatNumber(amount)} coins\``),
+        kv(isWin ? 'Ganancia' : 'Pérdida', `\`${formatNumber(Math.abs(netWin))} coins\``),
+        kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
+      ]),
+    ];
 
     if (newAchievements.length > 0) {
-      embed.addFields({
-        name: '🏆 ¡Nuevos logros!',
-        value: newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n')
-      });
+      lines.push('', header('🏆', 'Logros desbloqueados'));
+      lines.push(newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'));
     }
 
+    const embed = isWin
+      ? successEmbed(lines.join('\n'), '🎰 Ganaste')
+      : errorEmbed(lines.join('\n'), '🎰 Perdiste');
+
     return interaction.editReply({ embeds: [embed] });
-  }
+  },
 };
