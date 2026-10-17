@@ -123,7 +123,6 @@ export default {
     const dealerHand = [deck.pop(), deck.pop()];
     const playerValue = handValue(playerHand);
 
-    // ── Blackjack natural del jugador ──
     if (isBlackjack(playerHand)) {
       let resultText = '';
       let color = COLORS.SUCCESS;
@@ -153,7 +152,6 @@ export default {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // ── Blackjack natural del dealer ──
     if (isBlackjack(dealerHand)) {
       const description = [
         block([
@@ -168,7 +166,6 @@ export default {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    // ── Partida interactiva ──
     const gameId = Date.now().toString(36);
     let currentBet = amount;
     let doubled = false;
@@ -336,7 +333,6 @@ export default {
       } else if (action === 'stand') {
         return resolveDealer(i);
       } else if (action === 'surrender') {
-        // Devolvemos la mitad de la apuesta
         const refund = Math.floor(currentBet / 2);
         await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: refund } });
         resolved = true;
