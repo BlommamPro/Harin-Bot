@@ -1,6 +1,6 @@
 # 🤖 Discord Bot Base - EstrellaStudios
 
-Un bot de Discord modular y completo construido con **Discord.js v14** y **MongoDB**. Incluye sistemas de economía, niveles, moderación, sorteos y muchas funcionalidades más.
+Un bot de Discord modular y completo construido con **Discord.js v14** y **MongoDB**. Incluye un avanzado sistema de economía por servidor con mejoras (RPG), sistema de niveles dual, moderación, sorteos y configuración independiente por servidor.
 
 ---
 
@@ -9,7 +9,7 @@ Un bot de Discord modular y completo construido con **Discord.js v14** y **Mongo
 - [Características Principales](#-características-principales)
 - [Tecnologías Utilizadas](#-tecnologías-utilizadas)
 - [Instalación y Configuración](#-instalación-y-configuración)
-- [Scripts Disponibles](#-scripts-disponibles)
+- [Scripts de Arranque y Comandos](#-scripts-de-arranque-y-comandos)
 - [Estructura del Proyecto](#-estructura-del-proyecto)
 - [Módulos y Sistemas](#-módulos-y-sistemas)
 - [Estructura de un Comando](#-estructura-de-un-comando)
@@ -26,14 +26,14 @@ Un bot de Discord modular y completo construido con **Discord.js v14** y **Mongo
 
 ## ✨ Características Principales
 
-- **💰 Sistema de Economía**: Monedas, banco con capacidad por nivel, tienda personalizable, trabajos, robos y juegos (blackjack, slots, coinflip).
-- **⭐ Sistema de Niveles**: XP por mensajes, roles por nivel, tablas de clasificación globales y por servidor.
-- **🛡️ Moderación Avanzada**: Warns con acciones automáticas configurables, timeouts, bans, kicks y registro completo de acciones.
-- **🎁 Sorteos (Giveaways)**: Creación, finalización y reroll de sorteos con requisitos de roles.
-- **🎖️ Sistema de Insignias**: Logros desbloqueables por acciones específicas como rachas diarias, crímenes exitosos o alcanzar ciertos niveles.
-- **🔄 Menús Contextuales**: Comandos de contexto para usuario y mensaje.
-- **🛡️ Anticrash**: Sistema robusto de manejo de errores con reporte automático a canal de soporte.
-- **⚙️ Multi-Servidor**: Configuración independiente por servidor para todos los módulos.
+- **💰 Sistema de Economía Avanzado**: Economía independiente por servidor. Incluye balance, banco con capacidad, sistema de mejoras (upgrades) para aumentar ganancias, y juegos como blackjack, slots, coinflip, robos y crímenes.
+- **⭐ Sistema de Niveles Dual**: Niveles globales (compartidos entre servidores) y niveles por servidor, con asignación automática de roles y anuncios personalizables.
+- **🛡️ Moderación Avanzada**: Warns con acciones automáticas configurables, timeouts, bans, kicks, bloqueo de canales y registro completo de acciones (ModLog).
+- **🎁 Sorteos (Giveaways)**: Creación, finalización y reroll de sorteos con requisitos de roles y niveles.
+- **🏆 Logros y Ranking**: Sistema de insignias desbloqueables por hitos de economía y ranking semanal de coins ganados.
+- **⚙️ Configuración Total por Servidor**: Cada servidor puede ajustar cooldowns, recompensas, límites de apuestas y módulos de economía mediante `/economyconfig`.
+- **🔄 Menús Contextuales**: Comandos de contexto para usuarios y mensajes.
+- **🛡️ Anticrash**: Sistema robusto de manejo de errores con reporte automático a un canal de soporte.
 - **👑 Comandos de Owner**: Gestión de servidores y ajustes globales.
 
 ---
@@ -43,7 +43,7 @@ Un bot de Discord modular y completo construido con **Discord.js v14** y **Mongo
 - **[Node.js](https://nodejs.org/)** (v20+)
 - **[Discord.js](https://discord.js.org/)** (v14)
 - **[MongoDB](https://www.mongodb.com/)** + **[Mongoose](https://mongoosejs.com/)**
-- **[pnpm](https://pnpm.io/)** (Gestor de paquetes)
+- **[pnpm](https://pnpm.io/)** (Gestor de paquetes recomendado)
 
 ---
 
@@ -70,68 +70,90 @@ Copia el archivo de ejemplo y renómbralo:
 cp .env.example .env
 ```
 
-Edita el archivo `.env` con tus credenciales:
+Edita el archivo `.env` con tus credenciales. Aquí tienes el ejemplo de cómo debe quedar tu **`.env` para producción**:
 
 ```env
+# ===== ENTORNO =====
+ENV=production
+
 # ===== BOT =====
 BOT_TOKEN=TU_TOKEN_AQUI
 CLIENT_ID=ID_DE_TU_BOT
 
 # ===== BASE DE DATOS =====
-MONGO_URL=mongodb+srv://user:pass@cluster.mongodb.net/bot
+MONGO_URL=mongodb+srv://user:pass@cluster0.jlbcfcy.mongodb.net/bot
 
 # ===== CONFIGURACIÓN =====
-LANGUAGE=es
-COLOR=#FF8C00
-ERROR_COLOR=#ED4245
-COOLDOWN_COLOR=#FEE75C
 OWNER_IDS=TU_ID_AQUI
 SUPPORT_CHANNEL_ID=ID_CANAL_SOPORTE
 
 # ===== ESTADO =====
 STATUS=online
 ACTIVITY_TYPE=Playing
-ACTIVITY_NAME="Discord.js v14"
+ACTIVITY_NAME="EstrellaStudios ⭐"
 ```
 
-**Nota:** Para desarrollo, usa el archivo `.env.dev` (tienes un ejemplo en `.env.dev.example`). Los scripts de `package.json` ya están preparados para esta separación.
+Y aquí tienes el ejemplo de tu **`.env.dev` para desarrollo**:
 
-### 4. Desplegar comandos
+```env
+# ===== ENTORNO =====
+ENV=development
 
-Para desplegar los comandos en tu servidor de prueba (si configuraste `GUILD_ID` en tu archivo `.env`):
+# ===== BOT =====
+BOT_TOKEN=TU_TOKEN_AQUI
+CLIENT_ID=ID_DE_TU_BOT
+GUILD_ID=ID_SERVIDOR_TESTING
 
-```bash
-pnpm run cmd:deploy
+# ===== BASE DE DATOS =====
+MONGO_URL=mongodb+srv://user:pass@cluster0.jlbcfcy.mongodb.net/bot-dev
+
+# ===== CONFIGURACIÓN =====
+OWNER_IDS=TU_ID_AQUI
+SUPPORT_CHANNEL_ID=ID_CANAL_SOPORTE
+
+# ===== ESTADO =====
+STATUS=idle
+ACTIVITY_TYPE=Watching
+ACTIVITY_NAME="🔧 Modo Desarrollo"
 ```
 
-Para desarrollo:
-
-```bash
-pnpm run cmd:deploy:dev
-```
-
-> **Nota sobre `GUILD_ID`:** Esta variable es **opcional**. Si la configuras, los comandos se desplegarán de forma instantánea solo en ese servidor (ideal para pruebas). Si no la configuras, los comandos se desplegarán de forma global y pueden tardar hasta 1 hora en aparecer en todos los servidores.
+> **⚠️ NOTA IMPORTANTE SOBRE LOS INTENTS EN EL PORTAL DE DISCORD:**
+> Para que el bot funcione correctamente y cumpla con las políticas, en el **Portal de Desarrolladores (Pestaña Bot)** debes tener configurado lo siguiente:
+> - ✅ **Presence Intent:** Activado (Necesario para el comando `/userinfo`).
+> - ✅ **Server Members Intent:** Activado (Necesario para el sistema de niveles y roles automáticos).
+> - ❌ **Message Content Intent:** Desactivado (No es necesario, el bot usa comandos de barra).
 
 ---
 
-## 🚀 Scripts Disponibles
+## 🚀 Scripts de Arranque y Comandos
 
-| Comando | Descripción |
-|---------|-------------|
-| `pnpm start` | Inicia el bot en producción |
-| `pnpm dev` | Inicia el bot en modo desarrollo (con `--watch`) |
-| `pnpm cmd:deploy` | Despliega comandos para el servidor de producción |
-| `pnpm cmd:deploy:dev` | Despliega comandos para el servidor de desarrollo |
-| `pnpm cmd:delete` | Elimina todos los comandos en producción |
-| `pnpm cmd:delete:dev` | Elimina todos los comandos en desarrollo |
-| `pnpm cmd:list` | Lista todos los comandos registrados |
-| `pnpm cmd:reset` | Elimina y vuelve a desplegar comandos |
+El proyecto incluye scripts configurados en el `package.json` para facilitar el desarrollo y el despliegue. 
+
+### ¿Cómo funcionan los entornos?
+- **Producción (`.env`)**: Se usa para el bot en vivo. Los comandos se despliegan de forma **global** (pueden tardar hasta 1 hora en aparecer en todos los servidores).
+- **Desarrollo (`.env.dev`)**: Se usa para hacer pruebas. Requiere un `GUILD_ID` en el `.env.dev` para que los comandos se desplieguen **instantáneamente** solo en tu servidor de pruebas.
+
+### Lista de Scripts
+
+| Comando | ¿Qué hace? | ¿Cuándo usarlo? |
+|---------|------------|-----------------|
+| `pnpm start` | Inicia el bot en producción | Cuando el bot ya está listo para estar online 24/7. |
+| `pnpm dev` | Inicia el bot en modo desarrollo con auto-reinicio (`--watch`) | Mientras programas. Si cambias el código, el bot se reinicia solo. |
+| `pnpm cmd:deploy` | Despliega comandos globalmente (o al `GUILD_ID` si está configurado) | La primera vez que subes el bot a producción o añades comandos nuevos. |
+| `pnpm cmd:deploy:dev` | Despliega comandos solo en tu servidor de pruebas de forma instantánea | Cada vez que creas o modificas un comando nuevo mientras desarrollas. |
+| `pnpm cmd:delete` | Borra todos los comandos globales | Si necesitas hacer una limpieza total porque algo se rompió. |
+| `pnpm cmd:delete:dev` | Borra los comandos de tu servidor de pruebas | Para limpiar tu servidor de desarrollo. |
+| `pnpm cmd:list` | Muestra en consola la lista de comandos registrados en Discord | Para verificar si tus comandos se subieron correctamente. |
+| `pnpm cmd:reset` | Elimina y vuelve a desplegar los comandos (Producción) | Atajo para hacer un `delete` + `deploy` de una sola vez. |
+| `pnpm cmd:reset:dev` | Elimina y vuelve a desplegar los comandos (Desarrollo) | Atajo para el entorno de desarrollo. |
+
+> **💡 Tip de Desarrollo:** Si estás creando un comando nuevo, usa `pnpm cmd:deploy:dev` para probarlo al instante en tu servidor. Una vez que funcione perfectamente, usa `pnpm cmd:deploy` para subirlo a producción.
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-```
+```text
 └── 📁discord-bot-base
     └── 📁config
         ├── config.js
@@ -270,53 +292,35 @@ pnpm run cmd:deploy:dev
             ├── warns.js
             ├── weeklyRanking.js
         ├── index.js
-    ├── .env
-    ├── .env.dev
-    ├── .env.dev.example
     ├── .env.example
+    ├── .env.dev.example
     ├── .gitignore
     ├── LICENSE
     ├── package.json
     ├── pnpm-lock.yaml
-    ├── README.md
-    └── test-token.js
+    └── README.md
 ```
 
 ---
 
 ## 🧩 Módulos y Sistemas
 
-### 💰 Economía
+### 💰 Economía (Server-Side)
+- **Economía Independiente**: Los balances, bancos y mejoras son únicos para cada servidor.
+- **Mejoras (Upgrades)**: Los usuarios pueden comprar mejoras (mejor trabajo, suerte en apuestas, ingresos pasivos, etc.) para potenciar sus ganancias.
+- **Juegos de Azar**: Blackjack, Slots y Coinflip con apuestas configurables.
+- **Logros y Ranking**: Sistema de insignias automáticas y ranking semanal.
 
-- **Banco**: Depósitos y retiros con capacidad limitada por nivel global.
-- **Tienda**: Items personalizables con roles incluidos y stock limitado.
-- **Juegos**: Blackjack, Slots, Coinflip con apuestas.
-- **Trabajos**: Generación de ingresos pasivos con variedad de oficios.
-- **Robos**: Sistema de riesgo/recompensa con cooldowns.
-- **Inventario**: Gestión de items comprados por usuario.
-
-### ⭐ Niveles
-
+### ⭐ Niveles (Dual)
 - **Niveles Globales**: XP acumulada en todos los servidores.
-- **Niveles por Servidor**: XP específica, configurable por servidor.
-- **Roles por Nivel**: Asignación automática de roles al alcanzar ciertos niveles.
-- **Anuncios**: Canal dedicado para notificaciones de subidas de nivel.
+- **Niveles por Servidor**: XP específica, configurable, con canales ignorados y anuncios.
 
 ### 🛡️ Moderación
+- **Warns Automáticos**: Configuración de castigos progresivos (timeout, kick, ban) al acumular advertencias.
+- **Historial (ModLog)**: Registro detallado de cada acción de moderación con estado de los warns.
 
-- **Warns**: Sistema de advertencias con acciones automáticas configurables (kick, ban, timeout).
-- **Timeout**: Silenciamiento temporal con duración personalizada.
-- **Lock/Unlock**: Bloqueo y desbloqueo de canales.
-- **Clear**: Borrado masivo de mensajes con filtro por usuario.
-- **ModLog**: Registro completo de todas las acciones de moderación.
-
-### 🎁 Sorteos
-
-- Creación con duración personalizada.
-- Requisitos de rol para participar.
-- Finalización automática y manual.
-- Reroll de ganadores.
-- Participación mediante reacción.
+### 🎁 Sorteos (Giveaways)
+- Creación con duración personalizada, requisitos de rol y/o nivel, y participación mediante reacción (🎉).
 
 ---
 
@@ -334,8 +338,8 @@ export default {
   
   PERMISSIONS: ['ManageMessages'], // Permisos necesarios para el usuario
   BOT_PERMISSIONS: ['SendMessages'], // Permisos necesarios para el bot
-  OWNER: false, // Solo para owners (sobreescribe PERMISSIONS)
-  GUILD_ONLY: false, // Solo en servidores
+  OWNER: false, // Solo para owners del bot
+  GUILD_ONLY: true, // Solo en servidores
   NSFW: false, // Solo en canales NSFW
   COOLDOWN: 3, // Tiempo de cooldown en segundos
   
@@ -373,14 +377,17 @@ export default {
 
 | Modelo | Descripción |
 |--------|-------------|
-| `User` | Datos de usuario (balance, bank, xp, level, inventario, insignias, cooldowns) |
-| `Guild` | Configuración general del servidor (prefijo, idioma, canales) |
+| `User` | Datos globales del usuario (XP global, nivel, insignias, cooldowns) |
+| `GuildEconomy` | Economía por servidor (balance, banco, mejoras, estadísticas) |
+| `EconomyConfig` | Configuración de economía por servidor (cooldowns, recompensas, límites) |
+| `Guild` | Configuración general del servidor (idioma, canales, etc.) |
 | `GuildLevel` | Niveles por servidor de cada usuario |
 | `LevelConfig` | Configuración del sistema de niveles por servidor |
 | `ModLog` | Registro de acciones de moderación |
 | `Warn` | Advertencias de usuarios |
 | `WarnConfig` | Configuración del sistema de warns por servidor |
-| `ShopItem` | Items de la tienda por servidor |
+| `Achievement` | Logros desbloqueados por usuario |
+| `WeeklyRanking` | Registro de coins ganados para el ranking semanal |
 | `Giveaway` | Sorteos activos y finalizados |
 
 ---
@@ -392,16 +399,12 @@ export default {
 | `BOT_TOKEN` | Token de tu bot de Discord | ✅ Sí |
 | `CLIENT_ID` | ID de tu bot de Discord | ✅ Sí |
 | `MONGO_URL` | URL de conexión a MongoDB | ✅ Sí |
-| `LANGUAGE` | Idioma del bot (es/en) | ❌ No (por defecto: es) |
-| `COLOR` | Color principal de los embeds | ❌ No (por defecto: #fcc706) |
-| `ERROR_COLOR` | Color para errores | ❌ No (por defecto: #ED4245) |
-| `COOLDOWN_COLOR` | Color para cooldowns | ❌ No (por defecto: #f3a0fc) |
-| `OWNER_IDS` | IDs de los owners (separados por espacio) | ❌ No |
 | `GUILD_ID` | ID del servidor para despliegue rápido (opcional) | ❌ No |
+| `OWNER_IDS` | IDs de los owners (separados por coma o espacio) | ❌ No |
 | `SUPPORT_CHANNEL_ID` | ID del canal para reportes de errores | ❌ No |
 | `STATUS` | Estado del bot (online/idle/dnd/invisible) | ❌ No (por defecto: online) |
-| `ACTIVITY_TYPE` | Tipo de actividad (Playing/Listening/Watching) | ❌ No (por defecto: Playing) |
-| `ACTIVITY_NAME` | Nombre de la actividad | ❌ No (por defecto: EstrellaStudios ⭐) |
+| `ACTIVITY_TYPE` | Tipo de actividad (Playing/Listening/Watching) | ❌ No |
+| `ACTIVITY_NAME` | Nombre de la actividad | ❌ No |
 
 ---
 
@@ -411,8 +414,8 @@ El bot incluye un sistema robusto de manejo de errores:
 
 - **Anticrash**: Captura errores no manejados y eventos de advertencia.
 - **Reporte a Soporte**: Los errores críticos se envían automáticamente al canal configurado en `SUPPORT_CHANNEL_ID`.
-- **Logs Detallados**: Todos los eventos se registran con colores para mejor legibilidad.
-- **Recuperación**: El bot intenta recuperarse de errores sin caer.
+- **Logs Detallados**: Todos los eventos se registran con colores para mejor legibilidad en la consola.
+- **Protección contra Bucles**: Los sistemas de XP y ranking tienen protecciones para evitar bucles infinitos si los datos se corrompen.
 
 ---
 
