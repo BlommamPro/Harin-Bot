@@ -16,7 +16,7 @@ Un bot de Discord modular y completo construido con **Discord.js v14** y **Mongo
 - [Estructura de un Componente](#-estructura-de-un-componente)
 - [Modelos de Base de Datos](#%EF%B8%8F-modelos-de-base-de-datos)
 - [Variables de Entorno](#-variables-de-entorno)
-- [Manejo de Errores](#-manejo-de-errores)
+- [Manejo de Errores](#%EF%B8%8F-manejo-de-errores)
 - [Contribuciones](#-contribuciones)
 - [Apóyanos](#-apóyanos)
 - [Licencia](#-licencia)
