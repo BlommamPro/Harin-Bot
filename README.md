@@ -132,81 +132,154 @@ pnpm run cmd:deploy:dev
 ## 📁 Estructura del Proyecto
 
 ```
-discord-bot-base/
-├── config/
-│   └── config.js                 # Configuración central
-├── src/
-│   ├── commands/                 # Todos los comandos
-│   │   ├── administration/       # Configuración del bot
-│   │   │   ├── levelconfig.js    # Configuración de niveles
-│   │   │   ├── shopconfig.js     # Configuración de tienda
-│   │   │   └── warnconfig.js     # Configuración de warns
-│   │   ├── economy/              # Comandos económicos
-│   │   │   ├── bank.js           # Ver balance bancario
-│   │   │   ├── blackjack.js      # Juego de Blackjack
-│   │   │   ├── buy.js            # Comprar items
-│   │   │   ├── coinflip.js       # Apostar a cara o cruz
-│   │   │   ├── crime.js          # Cometer crímenes
-│   │   │   ├── daily.js          # Recompensa diaria
-│   │   │   ├── deposit.js        # Depositar en banco
-│   │   │   ├── inventory.js      # Ver inventario
-│   │   │   ├── pay.js            # Transferir dinero
-│   │   │   ├── rob.js            # Robar a otros
-│   │   │   ├── shop.js           # Ver tienda
-│   │   │   ├── slots.js          # Tragamonedas
-│   │   │   ├── withdraw.js       # Retirar del banco
-│   │   │   └── work.js           # Trabajar
-│   │   ├── general/              # Comandos generales
-│   │   │   ├── avatar.js         # Ver avatar
-│   │   │   ├── banner.js         # Ver banner
-│   │   │   ├── botinfo.js        # Info del bot
-│   │   │   ├── emojis.js         # Lista de emojis
-│   │   │   ├── help.js           # Menú de ayuda
-│   │   │   ├── ping.js           # Latencia
-│   │   │   └── servericon.js     # Icono del servidor
-│   │   ├── giveaways/            # Sorteos
-│   │   │   ├── create.js         # Crear sorteo
-│   │   │   ├── end.js            # Finalizar sorteo
-│   │   │   └── reroll.js         # Elegir nuevo ganador
-│   │   ├── leveling/             # Niveles y perfiles
-│   │   │   ├── leaderboard.js    # Tabla de clasificación
-│   │   │   ├── profile.js        # Perfil de usuario
-│   │   │   └── rank.js           # Rango y progreso
-│   │   ├── moderation/           # Comandos de moderación
-│   │   │   ├── ban.js            # Banear usuario
-│   │   │   ├── clear.js          # Borrar mensajes
-│   │   │   ├── kick.js           # Expulsar usuario
-│   │   │   ├── lock.js           # Bloquear canal
-│   │   │   ├── modlog.js         # Historial de moderación
-│   │   │   ├── slowmode.js       # Modo lento
-│   │   │   ├── timeout.js        # Timeout (silenciar)
-│   │   │   ├── unban.js          # Desbanear usuario
-│   │   │   ├── unlock.js         # Desbloquear canal
-│   │   │   ├── untimeout.js      # Quitar timeout
-│   │   │   ├── unwarn.js         # Eliminar warn
-│   │   │   ├── warn.js           # Advertir usuario
-│   │   │   └── warns.js          # Gestionar warns
-│   │   └── owner/                # Comandos de owner
-│   │       ├── guilds.js         # Lista de servidores
-│   │       └── settings.js       # Configuración del servidor
-│   ├── components/               # Componentes interactivos
-│   │   ├── buttons/
-│   │   ├── contextMenus/
-│   │   ├── modals/
-│   │   └── selectMenus/
-│   ├── events/                   # Eventos de Discord
-│   │   ├── client/
-│   │   ├── guild/
-│   │   └── interaction/
-│   ├── handlers/                 # Cargadores de comandos, eventos y componentes
-│   ├── models/                   # Modelos de MongoDB
-│   ├── structures/               # Estructuras personalizadas
-│   ├── utils/                    # Utilidades y funciones auxiliares
-│   └── index.js                  # Punto de entrada principal
-├── .env.example
-├── .env.dev.example
-├── package.json
-└── pnpm-lock.yaml
+└── 📁discord-bot-base
+    └── 📁config
+        ├── config.js
+    └── 📁src
+        └── 📁commands
+            └── 📁administration
+                ├── economyconfig.js
+                ├── levelconfig.js
+                ├── reset_economy.js
+                ├── warnconfig.js
+            └── 📁economy
+                ├── achievements.js
+                ├── bank.js
+                ├── blackjack.js
+                ├── coinflip.js
+                ├── crime.js
+                ├── daily.js
+                ├── deposit.js
+                ├── pay.js
+                ├── ranking.js
+                ├── rob.js
+                ├── slots.js
+                ├── top.js
+                ├── upgrades.js
+                ├── withdraw.js
+                ├── work.js
+            └── 📁general
+                ├── avatar.js
+                ├── banner.js
+                ├── botinfo.js
+                ├── channelinfo.js
+                ├── emoji.js
+                ├── help.js
+                ├── ping.js
+                ├── roleinfo.js
+                ├── servericon.js
+                ├── serverinfo.js
+                ├── userinfo.js
+            └── 📁giveaways
+                ├── create.js
+                ├── end.js
+                ├── reroll.js
+            └── 📁leveling
+                ├── leaderboard.js
+                ├── profile.js
+                ├── rank.js
+            └── 📁moderation
+                ├── ban.js
+                ├── clear.js
+                ├── kick.js
+                ├── lock.js
+                ├── modlog.js
+                ├── slowmode.js
+                ├── timeout.js
+                ├── unban.js
+                ├── unlock.js
+                ├── untimeout.js
+                ├── warn.js
+                ├── warns.js
+            └── 📁owner
+                ├── guilds.js
+                ├── settings.js
+        └── 📁components
+            └── 📁buttons
+                └── 📁example
+                    ├── confirm.js
+            └── 📁contextMenus
+                └── 📁message
+                    ├── info.js
+                └── 📁user
+                    ├── avatar.js
+            └── 📁modals
+                └── 📁example
+                    ├── report.js
+            └── 📁selectMenus
+                └── 📁example
+                    ├── roles.js
+                └── 📁help
+                    ├── category.js
+        └── 📁events
+            └── 📁client
+                ├── error.js
+                ├── messageReactionAdd.js
+                ├── ready.js
+                ├── warn.js
+            └── 📁guild
+                ├── guildCreate.js
+                ├── guildMemberAdd.js
+                ├── messageCreate.js
+            └── 📁interaction
+                ├── interactionCreate.js
+        └── 📁handlers
+            ├── commandHandler.js
+            ├── componentHandler.js
+            ├── eventHandler.js
+        └── 📁models
+            ├── Achievement.js
+            ├── EconomyConfig.js
+            ├── Giveaway.js
+            ├── Guild.js
+            ├── GuildEconomy.js
+            ├── GuildLevel.js
+            ├── LevelConfig.js
+            ├── ModLog.js
+            ├── User.js
+            ├── Warn.js
+            ├── WarnConfig.js
+            ├── WeeklyRanking.js
+        └── 📁structures
+        └── 📁utils
+            ├── achievements.js
+            ├── anticrash.js
+            ├── applyUpgrades.js
+            ├── badges.js
+            ├── cooldowns.js
+            ├── database.js
+            ├── deleteCommands.js
+            ├── deployCommands.js
+            ├── economyConfig.js
+            ├── economyConfigGuild.js
+            ├── economyCooldowns.js
+            ├── economyGuard.js
+            ├── embedColors.js
+            ├── embedDecorations.js
+            ├── embeds.js
+            ├── emojis.js
+            ├── giveawayHandler.js
+            ├── guildData.js
+            ├── levelSystem.js
+            ├── listCommands.js
+            ├── logger.js
+            ├── modlog.js
+            ├── parseCustomId.js
+            ├── parseTime.js
+            ├── permissions.js
+            ├── warns.js
+            ├── weeklyRanking.js
+        ├── index.js
+    ├── .env
+    ├── .env.dev
+    ├── .env.dev.example
+    ├── .env.example
+    ├── .gitignore
+    ├── LICENSE
+    ├── package.json
+    ├── pnpm-lock.yaml
+    ├── README.md
+    └── test-token.js
 ```
 
 ---
