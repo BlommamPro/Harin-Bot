@@ -42,7 +42,7 @@ export default {
         kv('ID', `\`${guild.id}\``),
         kv('Dueño', `<@${guild.ownerId}>`),
         kv('Creado', formatRelativeTime(guild.createdTimestamp)),
-        kv('Bot unido', formatRelativeTime(guild.joinedTimestamp)),
+        kv(`${client.user.username} se unió`, formatRelativeTime(guild.joinedTimestamp)),
       ]),
       '',
       header('👥', 'Miembros'),
