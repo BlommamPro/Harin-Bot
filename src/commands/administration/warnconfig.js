@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { getWarnConfig, updateWarnConfig } from '../../utils/warns.js';
+import { emojis } from '../../utils/emojis.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -148,7 +149,7 @@ export default {
       await updateWarnConfig(interaction.guildId, { dmUser: enable });
       return interaction.reply({
         embeds: [successEmbed(
-          `DM al usuario advertido: ${enable ? 'activado' : 'desactivado'}`
+          `DM al usuario advertido: ${enable ? `${emojis.on}` : `${emojis.off}`}`
         )]
       });
     }

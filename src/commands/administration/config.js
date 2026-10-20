@@ -9,6 +9,7 @@ import { GuildLevel } from '../../models/GuildLevel.js';
 import { Warn } from '../../models/Warn.js';
 import { GuildEconomy } from '../../models/GuildEconomy.js';
 import { Giveaway } from '../../models/Giveaway.js';
+import { emojis } from '../../utils/emojis.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -46,9 +47,9 @@ export default {
       '',
       header('⚙️', 'Módulos'),
       block([
-        kv('⭐ Niveles', levelConfig?.enabled ? '✅ Activado' : '❌ Desactivado'),
-        kv('💰 Economía', economyConfig?.economyEnabled ? '✅ Activado' : '❌ Desactivado'),
-        kv('🛡️ Warns auto', warnConfig.actions.length > 0 ? `✅ ${warnConfig.actions.length} reglas` : '❌ Desactivado'),
+        kv('⭐ Niveles', levelConfig?.enabled ? `${emojis.on}` : `${emojis.off}`),
+        kv('💰 Economía', economyConfig?.economyEnabled ? `${emojis.on}` : `${emojis.off}`),
+        kv('🛡️ Warns auto', warnConfig.actions.length > 0 ? `${emojis.on} ${warnConfig.actions.length} reglas` : `${emojis.off}`),
       ]),
       '',
       header('🛠️', 'Configuración de niveles'),

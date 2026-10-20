@@ -12,6 +12,7 @@ import {
 } from "../../utils/embeds.js";
 import { block, header, kv } from "../../utils/embedDecorations.js";
 import { LevelConfig } from "../../models/LevelConfig.js";
+import { emojis } from "../../utils/emojis.js";
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -125,7 +126,7 @@ export default {
       return interaction.reply({
         embeds: [
           successEmbed(
-            `Sistema de niveles: ${enable ? "activado" : "desactivado"}`,
+            `Sistema de niveles: ${enable ? `${emojis.on}` : `${emojis.off}`}`,
           ),
         ],
       });
@@ -310,7 +311,7 @@ export default {
       const description = [
         header("⭐", "Estado general"),
         block([
-          kv("Sistema", config?.enabled ? "✅ Activado" : "❌ Desactivado"),
+          kv("Sistema", config?.enabled ? `${emojis.on}` : `${emojis.off}`),
           kv(
             "Canal de anuncios",
             config?.announceChannel ? `<#${config.announceChannel}>` : "`No configurado`",

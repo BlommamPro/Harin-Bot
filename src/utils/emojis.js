@@ -2,10 +2,10 @@ export const emojis = {
   // ═══════════════════════════════════════════
   // 📌 EMOJIS GENERALES
   // ═══════════════════════════════════════════
-  check: "<a:check:0000000000000000>",
-  cross: "<a:cross:0000000000000000>",
+  check: "<:check_mark:1561945080108023858>",
+  cross: "<:cross_mark:1561945293900095498>",
   warning: "<a:warning:0000000000000000>",
-  info: "<a:info:0000000000000000>",
+  info: "<:info_icon:1561945466894028851>",
   loading: "<a:loading:0000000000000000>",
   arrow_right: "<:arrow_right:0000000000000000>",
   arrow_left: "<:arrow_left:0000000000000000>",
@@ -20,7 +20,7 @@ export const emojis = {
   pin: "<:pin:0000000000000000>",
   link: "<:link:0000000000000000>",
   home: "<:home:0000000000000000>",
-  settings: "<a:settings:0000000000000000>",
+  settings: "<:gear_icon:1561945606291849359>",
   search: "<:search:0000000000000000>",
   filter: "<:filter:0000000000000000>",
   sort: "<:sort:0000000000000000>",
@@ -410,8 +410,8 @@ export const emojis = {
   deny: "<a:deny:0000000000000000>",
   yes: "<a:yes:0000000000000000>",
   no: "<a:no:0000000000000000>",
-  on: "<a:on:0000000000000000>",
-  off: "<a:off:0000000000000000>",
+  on: "<:ON_button:1561945773074157569>",
+  off: "<:OFF_icon:1561946136384634986>",
   power: "<a:power:0000000000000000>",
   plug: "<a:plug:0000000000000000>",
   battery_full: "<a:battery_full:0000000000000000>",

@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { getEconomyConfig, updateEconomyConfig } from '../../utils/economyConfigGuild.js';
+import { emojis } from '../../utils/emojis.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -184,7 +185,7 @@ export default {
           `• Mínima: ${config.minBet}`,
           `• Máxima: ${config.maxBet}`,
           '',
-          `**Estado:** ${config.economyEnabled ? 'Activada' : 'Desactivada'}`
+          `**Estado:** ${config.economyEnabled ? `${emojis.on}` : `${emojis.off}`}`
         ].join('\n'),
         footer: {
           text: `Solicitado por ${interaction.user.username}`,
@@ -311,7 +312,7 @@ export default {
 
       return interaction.reply({
         embeds: [successEmbed(
-          `Economía ${enable ? 'activada' : 'desactivada'} en este servidor.`
+          `Economía ${enable ? `${emojis.on}` : `${emojis.off}`} en este servidor.`
         )]
       });
     }

@@ -6,6 +6,7 @@ import { getLevelConfig, updateLevelConfig } from '../../utils/levelSystem.js';
 import { getWarnConfig, updateWarnConfig } from '../../utils/warns.js';
 import { getEconomyConfig, updateEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { GuildEconomy } from '../../models/GuildEconomy.js';
+import { emojis } from '../../utils/emojis.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -122,9 +123,9 @@ export default {
         '',
         header('⚙️', 'Módulos'),
         block([
-          kv('⭐ Niveles', levelConfig?.enabled ? '✅ Activado' : '❌ Desactivado'),
-          kv('💰 Economía', economyConfig?.economyEnabled ? '✅ Activado' : '❌ Desactivado'),
-          kv('🛡️ Warns Auto', warnConfig.actions.length > 0 ? `✅ ${warnConfig.actions.length} reglas` : '❌ Desactivado'),
+          kv('⭐ Niveles', levelConfig?.enabled ? `${emojis.on}` : `${emojis.off}`),
+          kv('💰 Economía', economyConfig?.economyEnabled ? `${emojis.on}` : `${emojis.off}`),
+          kv('🛡️ Warns Auto', warnConfig.actions.length > 0 ? `${emojis.on} ${warnConfig.actions.length} reglas` : `${emojis.off}`),
           kv('🌐 Idioma', `\`${guildDataFull?.language || 'es'}\``),
         ]),
       ].join('\n');
@@ -153,7 +154,7 @@ export default {
           return interaction.reply({
             embeds: [createEmbed({
               color: enable ? COLORS.SUCCESS : COLORS.WARNING,
-              title: enable ? '⭐ Niveles activados' : '⭐ Niveles desactivados',
+              title: enable ? `${emojis.on}` : `${emojis.off}`,
               description: enable
                 ? 'Los usuarios ganarán XP por mensajes.'
                 : 'Los usuarios ya no ganarán XP por mensajes.',
@@ -177,7 +178,7 @@ export default {
           return interaction.reply({
             embeds: [createEmbed({
               color: enable ? COLORS.SUCCESS : COLORS.WARNING,
-              title: enable ? '🛡️ Warns automáticos activados' : '🛡️ Warns automáticos desactivados',
+              title: enable ? `🛡️ Warns automáticos ${emojis.on}` : `🛡️ Warns automáticos ${emojis.off}`,
               description: enable
                 ? '3 warns = timeout · 5 warns = kick · 7 warns = ban'
                 : 'Los warns ya no ejecutarán acciones automáticas.',
@@ -190,7 +191,7 @@ export default {
           return interaction.reply({
             embeds: [createEmbed({
               color: enable ? COLORS.SUCCESS : COLORS.WARNING,
-              title: enable ? '💰 Economía activada' : '💰 Economía desactivada',
+              title: enable ? `💰 Economía ${emojis.on}` : `💰 Economía ${emojis.off}`,
               description: enable
                 ? 'Los comandos de economía están disponibles.'
                 : 'Los comandos de economía están desactivados.',

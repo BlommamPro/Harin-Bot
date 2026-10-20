@@ -121,9 +121,9 @@ export default {
           `🌐 **Idioma:** \`${guildDataFull?.language || 'es'}\``,
           '',
           `**🔧 Módulos**`,
-          `⭐ **Niveles:** ${levelConfig?.enabled ? '✅ Activado' : '❌ Desactivado'}`,
-          `💰 **Economía:** ${economyConfig?.economyEnabled ? '✅ Activado' : '❌ Desactivado'}`,
-          `🛡️ **Warns Auto:** ${warnConfig.actions.length > 0 ? `✅ Activado (${warnConfig.actions.length} reglas)` : '❌ Desactivado'}`
+          `⭐ **Niveles:** ${levelConfig?.enabled ? `${emojis.on}` : `${emojis.off}`}`,
+          `💰 **Economía:** ${economyConfig?.economyEnabled ? `${emojis.on}` : `${emojis.off}`}`,
+          `🛡️ **Warns Auto:** ${warnConfig.actions.length > 0 ? `${emojis.on} (${warnConfig.actions.length} reglas)` : `${emojis.off}`}`
         ].join('\n'),
         footer: {
           text: `Usa /settings module para cambiar módulos`,
@@ -143,7 +143,7 @@ export default {
           await updateLevelConfig(interaction.guildId, { enabled: enable });
           return interaction.reply({
             embeds: [successEmbed(
-              `⭐ **Niveles:** ${enable ? '✅ Activado' : '❌ Desactivado'}\n` +
+              `⭐ **Niveles:** ${enable ? `${emojis.on}` : `${emojis.off}`}\n` +
               (enable ? 'Los usuarios ganarán XP por mensajes.' : 'Los usuarios ya no ganarán XP por mensajes.')
             )]
           });
@@ -164,7 +164,7 @@ export default {
           }
           return interaction.reply({
             embeds: [successEmbed(
-              `🛡️ **Warns Automáticos:** ${enable ? '✅ Activado' : '❌ Desactivado'}\n` +
+              `🛡️ **Warns Automáticos:** ${enable ? `${emojis.on}` : `${emojis.off}`}\n` +
               (enable ? '3 warns = timeout, 5 warns = kick, 7 warns = ban' : 'Los warns ya no ejecutarán acciones automáticas.')
             )]
           });
@@ -174,7 +174,7 @@ export default {
           await updateEconomyConfig(interaction.guildId, { economyEnabled: enable });
           return interaction.reply({
             embeds: [successEmbed(
-              `💰 **Economía:** ${enable ? '✅ Activado' : '❌ Desactivado'}\n` +
+              `💰 **Economía:** ${enable ? `${emojis.on}` : `${emojis.off}`}\n` +
               (enable ? 'Los comandos de economía están disponibles.' : 'Los comandos de economía están desactivados.')
             )]
           });
