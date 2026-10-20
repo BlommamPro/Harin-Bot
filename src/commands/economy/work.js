@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
@@ -79,8 +79,7 @@ export default {
     const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
     const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
-    const lines = [
-      header(`${job.emoji}`, job.name),
+    const description = [
       `-# ${job.description}`,
       '',
       block([
@@ -88,14 +87,21 @@ export default {
         kv('Ganancia', `\`${formatNumber(reward)} coins\``),
         kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
       ]),
-    ];
+    ].join('\n');
+
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: `${job.emoji} ${job.name.charAt(0).toUpperCase() + job.name.slice(1)}`,
+      description,
+    });
 
     if (newAchievements.length > 0) {
-      lines.push('', header('🏆', 'Logros desbloqueados'));
-      lines.push(newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'));
+      embed.addFields({
+        name: '🏆 Logros desbloqueados',
+        value: newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'),
+      });
     }
 
-    const embed = successEmbed(lines.join('\n'), '💼 Trabajo completado');
     embed.setFooter({ text: `Siguiente trabajo en ${config.workCooldownMinutes} min` });
 
     return interaction.editReply({ embeds: [embed] });

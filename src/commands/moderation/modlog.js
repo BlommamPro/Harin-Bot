@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 import { getModLog } from '../../utils/modlog.js';
 import { Warn } from '../../models/Warn.js';
 
@@ -41,7 +41,10 @@ export default {
           color: COLORS.SUCCESS,
           title: '✅ Historial limpio',
           description: `${target} no tiene historial de moderación en este servidor.`,
-          footer: { text: `Solicitado por ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() },
+          footer: {
+            text: `Solicitado por ${interaction.user.username}`,
+            icon: interaction.user.displayAvatarURL(),
+          },
         })],
       });
     }
@@ -80,7 +83,7 @@ export default {
         kv('Acciones totales', `\`${logs.length}\``),
       ]),
       '',
-      header('📜', `Últimas ${Math.min(logs.length, 15)} acciones`),
+      `-# Mostrando las últimas ${Math.min(logs.length, 15)} acciones`,
       '',
       lines.join('\n\n'),
     ].join('\n');
@@ -90,7 +93,10 @@ export default {
       title: `📜 Historial de ${target.username}`,
       thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
       description,
-      footer: { text: `Solicitado por ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() },
+      footer: {
+        text: `Solicitado por ${interaction.user.username}`,
+        icon: interaction.user.displayAvatarURL(),
+      },
     });
 
     await interaction.reply({ embeds: [embed] });

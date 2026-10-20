@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
@@ -67,24 +67,28 @@ export default {
     const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
     const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
-    const lines = [
-      header('🎁', 'Recompensa diaria'),
+    const description = [
       block([
         kv('Recompensa', `\`${formatNumber(totalReward)} coins\``),
         newStreak > 1 ? kv('Racha', `\`${newStreak} días\` (+${formatNumber(streakBonus)} bonus)`) : null,
         kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
       ].filter(Boolean)),
-    ];
+    ].join('\n');
+
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '🎁 Daily reclamado',
+      description,
+    });
 
     if (newAchievements.length > 0) {
-      lines.push('', header('🏆', 'Logros desbloqueados'));
-      lines.push(newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'));
+      embed.addFields({
+        name: '🏆 Logros desbloqueados',
+        value: newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'),
+      });
     }
 
-    const embed = successEmbed(lines.join('\n'), '🎁 Daily reclamado');
-    embed.setFooter({
-      text: `Siguiente daily en ${Math.floor(config.dailyCooldownMinutes / 60)}h`,
-    });
+    embed.setFooter({ text: `Siguiente daily en ${Math.floor(config.dailyCooldownMinutes / 60)}h` });
 
     return interaction.editReply({ embeds: [embed] });
   },

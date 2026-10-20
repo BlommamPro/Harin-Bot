@@ -1,7 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
-import { clearEmbed } from '../../utils/embeds.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -77,18 +76,22 @@ export default {
         deletedCount = deleted.size;
       }
 
-      const description = [
-        header('🧹', 'Mensajes borrados'),
-        block([
-          kv('Canal', targetChannel),
-          kv('Mensajes borrados', `\`${deletedCount}\``),
-          targetUser ? kv('Filtrado por', targetUser) : null,
-          kv('Moderador', interaction.user),
-        ].filter(Boolean)),
-      ].join('\n');
+      const description = block([
+        kv('Canal', targetChannel),
+        kv('Mensajes borrados', `\`${deletedCount}\``),
+        targetUser ? kv('Filtrado por', targetUser) : null,
+        kv('Moderador', interaction.user),
+      ].filter(Boolean));
 
-      const embed = clearEmbed(description);
-      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '🧹 Mensajes borrados',
+        description,
+        footer: {
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
+      });
 
       await interaction.editReply({ embeds: [embed] });
     } catch (err) {

@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { createEmbed, errorEmbed, successEmbed, COLORS } from '../../utils/embeds.js';
-import { header, block, kv, bullets } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 import { getUserWarns, clearUserWarns, getWarnCount } from '../../utils/warns.js';
 import { addModLog } from '../../utils/modlog.js';
 import { Warn } from '../../models/Warn.js';
@@ -55,7 +55,10 @@ export default {
             color: COLORS.SUCCESS,
             title: '✅ Sin advertencias',
             description: `${target} no tiene ninguna advertencia.`,
-            footer: { text: `Solicitado por ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() },
+            footer: {
+              text: `Solicitado por ${interaction.user.username}`,
+              icon: interaction.user.displayAvatarURL(),
+            },
           })],
         });
       }
@@ -69,7 +72,6 @@ export default {
       });
 
       const description = [
-        header('⚠️', `Warns de ${target.username}`),
         block([kv('Total', `\`${warns.length}\``)]),
         '',
         lines.join('\n\n'),
@@ -77,10 +79,13 @@ export default {
 
       const embed = createEmbed({
         color: COLORS.MODERATION,
-        title: `⚠️ Historial de warns`,
+        title: `⚠️ Warns de ${target.username}`,
         description,
         thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
-        footer: { text: `Solicitado por ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() },
+        footer: {
+          text: `Solicitado por ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
       });
 
       return interaction.reply({ embeds: [embed] });
@@ -88,7 +93,6 @@ export default {
 
     if (sub === 'remove') {
       const warnId = interaction.options.getString('id');
-
       const warn = await Warn.findOne({ _id: warnId, guildId: interaction.guildId });
 
       if (!warn) {
@@ -106,17 +110,22 @@ export default {
 
       const remaining = await getWarnCount(interaction.guildId, targetId);
 
-      const description = [
-        header('🗑️', 'Warn eliminada'),
-        block([
-          kv('ID', `\`${warnId}\``),
-          kv('Usuario afectado', `<@${targetId}>`),
-          kv('Warns restantes', `\`${remaining}\``),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('ID', `\`${warnId}\``),
+        kv('Usuario afectado', `<@${targetId}>`),
+        kv('Warns restantes', `\`${remaining}\``),
+      ]);
 
-      const embed = successEmbed(description);
-      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '🗑️ Warn eliminada',
+        description,
+        footer: {
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
+      });
+
       return interaction.reply({ embeds: [embed] });
     }
 
@@ -132,7 +141,6 @@ export default {
       }
 
       const warnCount = await getWarnCount(interaction.guildId, target.id);
-
       if (warnCount === 0) {
         return interaction.reply({
           embeds: [errorEmbed(`${target} no tiene advertencias.`)],
@@ -143,17 +151,22 @@ export default {
       await clearUserWarns(interaction.guildId, target.id);
       await addModLog(interaction.guildId, target.id, interaction.user.id, 'clear', `Todas las warns eliminadas (${warnCount})`);
 
-      const description = [
-        header('🗑️', 'Warns eliminadas'),
-        block([
-          kv('Usuario', target),
-          kv('Warns eliminadas', `\`${warnCount}\``),
-          kv('Moderador', interaction.user),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('Usuario', target),
+        kv('Warns eliminadas', `\`${warnCount}\``),
+        kv('Moderador', interaction.user),
+      ]);
 
-      const embed = successEmbed(description);
-      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '🗑️ Warns eliminadas',
+        description,
+        footer: {
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
+      });
+
       return interaction.reply({ embeds: [embed] });
     }
   },

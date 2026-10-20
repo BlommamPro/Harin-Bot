@@ -1,6 +1,42 @@
 import { Giveaway } from '../models/Giveaway.js';
 import { createEmbed, COLORS } from './embeds.js';
+import { block, kv, formatNumber } from './embedDecorations.js';
 import { logger } from './logger.js';
+
+function buildGiveawayDescription(gw) {
+  const req = [];
+  if (gw.requiredRoleId) req.push(kv('Rol requerido', `<@&${gw.requiredRoleId}>`));
+  if (gw.requiredLevel) {
+    const label = gw.requiredLevelType === 'global' ? 'Global' : 'Servidor';
+    req.push(kv('Nivel mínimo', `\`${gw.requiredLevel}\` (${label})`));
+  }
+
+  const lines = [
+    kv('Premio', `**${gw.prize}**`),
+    kv('Ganadores', `\`${gw.winnerCount}\``),
+    kv('Termina', `<t:${Math.floor(new Date(gw.endTime).getTime() / 1000)}:R>`),
+    kv('Participantes', `\`${gw.participants.length}\``),
+  ];
+
+  if (req.length > 0) {
+    lines.push('', '**Requisitos**');
+    lines.push(...req.map(r => `> ${r}`));
+  }
+
+  lines.push('', '-# Usa los botones para participar o salir del sorteo.');
+  return lines.join('\n');
+}
+
+export function buildGiveawayEmbed(gw) {
+  return createEmbed({
+    color: COLORS.GIVEAWAY,
+    title: '🎉 Sorteo',
+    description: buildGiveawayDescription(gw),
+    footer: {
+      text: `ID: ${gw.giveawayId} · Por ${gw.hostedBy}`,
+    },
+  });
+}
 
 export async function endGiveaway(client, giveawayId, guildId = null) {
   const query = { giveawayId, ended: false };
@@ -27,14 +63,14 @@ export async function endGiveaway(client, giveawayId, guildId = null) {
   }
 
   const reaction = message.reactions.cache.get('🎉');
-  let users = [];
-
+  let reactionUsers = [];
   if (reaction) {
     const fetched = await reaction.users.fetch();
-    users = fetched.filter(u => !u.bot).map(u => u.id);
+    reactionUsers = fetched.filter(u => !u.bot).map(u => u.id);
   }
 
-  const allParticipants = [...new Set([...gw.participants, ...users])];
+  const allParticipants = [...new Set([...gw.participants, ...reactionUsers])]
+    .filter(id => !gw.leftParticipants.includes(id));
 
   const winners = [];
   if (allParticipants.length > 0) {
@@ -53,30 +89,33 @@ export async function endGiveaway(client, giveawayId, guildId = null) {
 
   const winnerText = winners.length > 0
     ? winners.map(id => `<@${id}>`).join(', ')
-    : 'Nadie participó';
+    : '`Nadie participó`';
 
-  const finalLines = [
-    `**Premio:** ${gw.prize}`,
-    `**Ganador(es):** ${winnerText}`,
-    `**Participantes:** ${allParticipants.length}`,
+  const req = [];
+  if (gw.requiredRoleId) req.push(kv('Rol requerido', `<@&${gw.requiredRoleId}>`));
+  if (gw.requiredLevel) {
+    const label = gw.requiredLevelType === 'global' ? 'Global' : 'Servidor';
+    req.push(kv('Nivel mínimo', `\`${gw.requiredLevel}\` (${label})`));
+  }
+
+  const lines = [
+    kv('Premio', `**${gw.prize}**`),
+    kv('Ganador(es)', winnerText),
+    kv('Participantes', `\`${allParticipants.length}\``),
   ];
 
-  if (gw.requiredRoleId) {
-    finalLines.push(`**Requisito de Rol:** <@&${gw.requiredRoleId}>`);
+  if (req.length > 0) {
+    lines.push('', '**Requisitos**');
+    lines.push(...req.map(r => `> ${r}`));
   }
 
-  if (gw.requiredLevel) {
-    const levelLabel = gw.requiredLevelType === 'global' ? 'Global' : 'Servidor';
-    finalLines.push(`**Requisito de Nivel:** ${gw.requiredLevel} (${levelLabel})`);
-  }
-
-  finalLines.push(`**ID:** \`${gw.giveawayId}\``);
+  lines.push('', `-# ID: \`${gw.giveawayId}\``);
 
   const embed = createEmbed({
     color: COLORS.GIVEAWAY,
-    title: '🎉 Sorteo Finalizado',
-    description: finalLines.join('\n'),
-    footer: { text: `Finalizado • ID: ${gw.giveawayId}` }
+    title: '🎉 Sorteo finalizado',
+    description: lines.join('\n'),
+    footer: { text: `ID: ${gw.giveawayId}` },
   });
 
   await message.edit({ embeds: [embed], components: [] });
@@ -85,7 +124,7 @@ export async function endGiveaway(client, giveawayId, guildId = null) {
     content: winners.length > 0
       ? `🎉 ¡Felicidades ${winners.map(id => `<@${id}>`).join(', ')}! Ganaste **${gw.prize}**`
       : `😢 Nadie participó en el sorteo de **${gw.prize}**`,
-    embeds: [embed]
+    embeds: [embed],
   });
 
   return gw;
@@ -102,63 +141,50 @@ export async function rerollGiveaway(giveawayId, guildId = null) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-export async function addParticipant(giveawayId, userId) {
+export async function joinGiveaway(giveawayId, userId) {
   const gw = await Giveaway.findOne({ giveawayId, ended: false });
-  if (!gw) return false;
+  if (!gw) return { ok: false, reason: 'not_found' };
 
-  if (!gw.participants.includes(userId)) {
-    gw.participants.push(userId);
-    await gw.save();
-    return true;
+  if (gw.participants.includes(userId)) {
+    return { ok: false, reason: 'already_in', giveaway: gw };
   }
-  return false;
+
+  gw.participants.push(userId);
+  gw.leftParticipants = gw.leftParticipants.filter(id => id !== userId);
+  await gw.save();
+  return { ok: true, giveaway: gw };
 }
 
-export async function updateGiveawayEmbed(message, giveawayId) {
+export async function leaveGiveaway(giveawayId, userId) {
+  const gw = await Giveaway.findOne({ giveawayId, ended: false });
+  if (!gw) return { ok: false, reason: 'not_found' };
+
+  if (!gw.participants.includes(userId)) {
+    return { ok: false, reason: 'not_in', giveaway: gw };
+  }
+
+  gw.participants = gw.participants.filter(id => id !== userId);
+  if (!gw.leftParticipants.includes(userId)) {
+    gw.leftParticipants.push(userId);
+  }
+  await gw.save();
+  return { ok: true, giveaway: gw };
+}
+
+export async function updateGiveawayEmbed(message, giveawayId, { force = false } = {}) {
   const gw = await Giveaway.findOne({ giveawayId, ended: false });
   if (!gw) return;
 
   const now = Date.now();
   const lastEdit = gw.lastEdit ? new Date(gw.lastEdit).getTime() : 0;
-  
-  if (now - lastEdit < 8000) return;
 
-  const timeLeft = Math.ceil((gw.endTime - now) / 1000);
+  if (!force && now - lastEdit < 8000) return;
+
+  const timeLeft = Math.ceil((new Date(gw.endTime).getTime() - now) / 1000);
   if (timeLeft <= 0) return;
 
-  const descriptionLines = [
-    `**Premio:** ${gw.prize}`,
-    `**Ganadores:** ${gw.winnerCount}`,
-    `**Termina:** <t:${Math.floor(gw.endTime / 1000)}:R>`,
-    `**Participantes:** ${gw.participants.length}`,
-  ];
-
-  const requirements = [];
-
-  if (gw.requiredRoleId) {
-    requirements.push(`**Requisito de Rol:** <@&${gw.requiredRoleId}>`);
-  }
-
-  if (gw.requiredLevel) {
-    const levelLabel = gw.requiredLevelType === 'global' ? 'Global' : 'Servidor';
-    requirements.push(`**Requisito de Nivel:** ${gw.requiredLevel} (${levelLabel})`);
-  }
-
-  if (requirements.length > 0) {
-    descriptionLines.push('', ...requirements);
-  }
-
-  descriptionLines.push('', 'Reacciona con 🎉 para participar');
-
-  const embed = createEmbed({
-    color: COLORS.GIVEAWAY,
-    title: '🎉 Sorteo',
-    description: descriptionLines.join('\n'),
-    footer: { text: `ID: ${gw.giveawayId} • Creado por ${gw.hostedBy}` }
-  });
-
   try {
-    await message.edit({ embeds: [embed] });
+    await message.edit({ embeds: [buildGiveawayEmbed(gw)] });
     gw.lastEdit = new Date();
     await gw.save();
   } catch { /* ignorar */ }
@@ -169,7 +195,7 @@ export function startGiveawayChecker(client) {
     const now = new Date();
     const ending = await Giveaway.find({
       ended: false,
-      endTime: { $lte: now }
+      endTime: { $lte: now },
     });
 
     for (const gw of ending) {

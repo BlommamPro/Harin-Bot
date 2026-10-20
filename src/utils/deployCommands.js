@@ -20,6 +20,11 @@ const timeout = setTimeout(() => {
 
       json.integration_types = allowUserInstall ? [0, 1] : [0];
       json.contexts = allowUserInstall ? [0, 1, 2] : [0];
+
+      if (cmd.OWNER === true) {
+        json.default_member_permissions = '0';
+      }
+
       commands.push(json);
     });
 
@@ -30,6 +35,11 @@ const timeout = setTimeout(() => {
 
       json.integration_types = allowUserInstall ? [0, 1] : [0];
       json.contexts = allowUserInstall ? [0, 1, 2] : [0];
+
+      if (menu.OWNER === true) {
+        json.default_member_permissions = '0';
+      }
+
       contextMenus.push(json);
     });
 
@@ -38,7 +48,7 @@ const timeout = setTimeout(() => {
     const rest = new REST({
       version: '10',
       timeout: 120000,
-      retries: 3
+      retries: 3,
     }).setToken(config.token);
 
     logger.info(`Deployando ${allCommands.length} comandos... (puede tardar varios minutos si Discord esta lento)`);

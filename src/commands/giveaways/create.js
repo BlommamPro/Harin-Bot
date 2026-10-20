@@ -1,9 +1,17 @@
-import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { createEmbed, errorEmbed, successEmbed, COLORS } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  MessageFlags,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+} from 'discord.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { Giveaway } from '../../models/Giveaway.js';
 import { parseTime } from '../../utils/parseTime.js';
 import { getLevelConfig } from '../../utils/levelSystem.js';
+import { buildGiveawayEmbed } from '../../utils/giveawayHandler.js';
 
 function generateGiveawayId() {
   return Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -77,7 +85,6 @@ export default {
     });
 
     const MAX_GIVEAWAYS = 3;
-
     if (activeGiveaways >= MAX_GIVEAWAYS) {
       return interaction.reply({
         embeds: [errorEmbed(
@@ -90,47 +97,11 @@ export default {
     const endTime = Date.now() + parsed.ms;
     const giveawayId = generateGiveawayId();
 
-    const requirements = [];
-    if (requiredRole) requirements.push(kv('Rol requerido', `<@&${requiredRole.id}>`));
-    if (requiredLevel) {
-      const levelLabel = levelType === 'global' ? 'Global' : 'Servidor';
-      requirements.push(kv('Nivel mínimo', `\`${requiredLevel}\` (${levelLabel})`));
-    }
-
-    const lines = [
-      header('🎉', 'Sorteo'),
-      block([
-        kv('Premio', `**${prize}**`),
-        kv('Ganadores', `\`${winnerCount}\``),
-        kv('Termina', `<t:${Math.floor(endTime / 1000)}:R>`),
-        kv('Participantes', '`0`'),
-      ]),
-    ];
-
-    if (requirements.length > 0) {
-      lines.push('', header('📋', 'Requisitos'), block(requirements));
-    }
-
-    lines.push('', '-# Reacciona con 🎉 para participar');
-
-    const embed = createEmbed({
-      color: COLORS.GIVEAWAY,
-      title: '🎉 Nuevo sorteo',
-      description: lines.join('\n'),
-      footer: {
-        text: `ID: ${giveawayId} · Por ${interaction.user.tag}`,
-        icon: interaction.user.displayAvatarURL(),
-      },
-    });
-
-    const msg = await interaction.channel.send({ embeds: [embed] });
-    await msg.react('🎉');
-
-    await Giveaway.create({
+    const gwData = {
       giveawayId,
       guildId: interaction.guildId,
       channelId: interaction.channelId,
-      messageId: msg.id,
+      messageId: 'placeholder',
       prize,
       winnerCount,
       endTime: new Date(endTime),
@@ -140,27 +111,58 @@ export default {
       requiredLevel: requiredLevel || null,
       requiredLevelType: requiredLevel ? levelType : null,
       participants: [],
+      leftParticipants: [],
       winners: [],
       ended: false,
+    };
+
+    const provisionalEmbed = buildGiveawayEmbed(gwData);
+
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`giveaway_join_${giveawayId}`)
+        .setLabel('Participar')
+        .setEmoji('🎉')
+        .setStyle(ButtonStyle.Success),
+      new ButtonBuilder()
+        .setCustomId(`giveaway_leave_${giveawayId}`)
+        .setLabel('Salir')
+        .setEmoji('🚪')
+        .setStyle(ButtonStyle.Secondary),
+    );
+
+    const msg = await interaction.channel.send({
+      embeds: [provisionalEmbed],
+      components: [row],
     });
 
-    const remaining = MAX_GIVEAWAYS - (activeGiveaways + 1);
+    await msg.react('🎉');
+    await msg.react('❌');
+
+    gwData.messageId = msg.id;
+    await Giveaway.create(gwData);
+
     const reqText = [];
     if (requiredRole) reqText.push(`rol ${requiredRole}`);
     if (requiredLevel) reqText.push(`nivel ${requiredLevel} (${levelType})`);
 
-    const description = [
-      header('✅', 'Sorteo creado'),
-      block([
-        kv('ID', `\`${giveawayId}\``),
-        kv('Termina en', parsed.text),
-        kv('Requisitos', reqText.length > 0 ? reqText.join(' y ') : '`Sin requisitos especiales`'),
-        kv('Sorteos activos', `\`${activeGiveaways + 1} / ${MAX_GIVEAWAYS}\` (${remaining} disponibles)`),
-      ]),
-    ].join('\n');
+    const remaining = MAX_GIVEAWAYS - (activeGiveaways + 1);
+
+    const description = block([
+      kv('ID', `\`${giveawayId}\``),
+      kv('Termina en', parsed.text),
+      kv('Requisitos', reqText.length > 0 ? reqText.join(' y ') : '`Sin requisitos`'),
+      kv('Sorteos activos', `\`${activeGiveaways + 1} / ${MAX_GIVEAWAYS}\` (${remaining} disponibles)`),
+    ]);
+
+    const confirmEmbed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '✅ Sorteo creado',
+      description,
+    });
 
     await interaction.reply({
-      embeds: [successEmbed(description)],
+      embeds: [confirmEmbed],
       flags: MessageFlags.Ephemeral,
     });
   },

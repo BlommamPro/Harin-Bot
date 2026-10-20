@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -48,17 +48,22 @@ export default {
         SendMessages: null,
       }, { reason: `${interaction.user.tag}: ${reason}` });
 
-      const description = [
-        header('🔓', 'Canal desbloqueado'),
-        block([
-          kv('Canal', targetChannel),
-          kv('Razón', reason),
-          kv('Moderador', interaction.user),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('Canal', targetChannel),
+        kv('Razón', reason),
+        kv('Moderador', interaction.user),
+      ]);
 
-      const embed = successEmbed(description);
-      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '🔓 Canal desbloqueado',
+        description,
+        footer: {
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
+      });
+
       await interaction.reply({ embeds: [embed] });
     } catch (err) {
       return interaction.reply({ embeds: [errorEmbed(`No pude desbloquear el canal: ${err.message}`)], flags: MessageFlags.Ephemeral });

@@ -16,9 +16,7 @@ export default {
     .setDescription('Muestra tu progreso de nivel')
     .setDMPermission(false)
     .addUserOption(opt =>
-      opt.setName('usuario')
-         .setDescription('Usuario a ver (opcional)')
-         .setRequired(false)
+      opt.setName('usuario').setDescription('Usuario a ver (opcional)').setRequired(false)
     )
     .addStringOption(opt =>
       opt.setName('tipo')
@@ -46,19 +44,16 @@ export default {
       const bar = createProgressBar(data.xp, xpNeeded, 16);
       const pct = formatPercentage(data.xp, xpNeeded);
 
-      const description = [
-        header('🌍', 'Progreso global'),
-        block([
-          kv('Nivel', `\`${data.level}\``),
-          kv('XP', `\`${formatNumber(data.xp)} / ${formatNumber(xpNeeded)}\``),
-          `\`${bar}\` **${pct}%**`,
-          kv('Mensajes', `\`${formatNumber(data.messages)}\``),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('Nivel', `\`${data.level}\``),
+        kv('XP', `\`${formatNumber(data.xp)} / ${formatNumber(xpNeeded)}\``),
+        `\`${bar}\` **${pct}%**`,
+        kv('Mensajes', `\`${formatNumber(data.messages)}\``),
+      ]);
 
       const embed = createEmbed({
         color: COLORS.LEVELING,
-        title: `🌍 ${target.username}`,
+        title: `🌍 Rango global · ${target.username}`,
         thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
         description,
         footer: {
@@ -75,19 +70,16 @@ export default {
     const bar = createProgressBar(data.xp, xpNeeded, 16);
     const pct = formatPercentage(data.xp, xpNeeded);
 
-    const description = [
-      header('🏠', `Progreso en ${interaction.guild.name}`),
-      block([
-        kv('Nivel', `\`${data.level}\``),
-        kv('XP', `\`${formatNumber(data.xp)} / ${formatNumber(xpNeeded)}\``),
-        `\`${bar}\` **${pct}%**`,
-        kv('Mensajes', `\`${formatNumber(data.messages)}\``),
-      ]),
-    ].join('\n');
+    const description = block([
+      kv('Nivel', `\`${data.level}\``),
+      kv('XP', `\`${formatNumber(data.xp)} / ${formatNumber(xpNeeded)}\``),
+      `\`${bar}\` **${pct}%**`,
+      kv('Mensajes', `\`${formatNumber(data.messages)}\``),
+    ]);
 
     const embed = createEmbed({
       color: COLORS.LEVELING,
-      title: `🏠 ${target.username}`,
+      title: `🏠 Rango en ${interaction.guild.name} · ${target.username}`,
       thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
       description,
       footer: {

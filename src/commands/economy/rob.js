@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
@@ -77,22 +77,26 @@ export default {
       const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
       const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
-      const lines = [
-        header('🥷', 'Robo exitoso'),
-        block([
-          kv('Víctima', target.username),
-          kv('Robado', `\`${formatNumber(stolen)} coins\``),
-          kv('Robos exitosos', `\`${updatedEconomy.robs}\``),
-          kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-        ]),
-      ];
+      const description = block([
+        kv('Víctima', target.username),
+        kv('Robado', `\`${formatNumber(stolen)} coins\``),
+        kv('Robos exitosos', `\`${updatedEconomy.robs}\``),
+        kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
+      ]);
+
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '🥷 Robo exitoso',
+        description,
+      });
 
       if (newAchievements.length > 0) {
-        lines.push('', header('🏆', 'Logros desbloqueados'));
-        lines.push(newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'));
+        embed.addFields({
+          name: '🏆 Logros desbloqueados',
+          value: newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'),
+        });
       }
 
-      const embed = successEmbed(lines.join('\n'));
       return interaction.editReply({ embeds: [embed] });
     }
 
@@ -101,16 +105,18 @@ export default {
     await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -fine } });
     await setDbCooldown(interaction.user.id, `rob_${interaction.guildId}`);
 
-    const lines = [
-      header('🚔', 'Te atraparon'),
-      block([
-        kv('Víctima', target.username),
-        kv('Motivo', 'Te descubrieron y llamaron a la policía'),
-        kv('Multa', `\`${formatNumber(fine)} coins\``),
-      ]),
-    ];
+    const description = block([
+      kv('Víctima', target.username),
+      kv('Motivo', 'Te descubrieron y llamaron a la policía'),
+      kv('Multa', `\`${formatNumber(fine)} coins\``),
+    ]);
 
-    const embed = errorEmbed(lines.join('\n'));
+    const embed = createEmbed({
+      color: COLORS.ERROR,
+      title: '🚔 Te atraparon',
+      description,
+    });
+
     return interaction.editReply({ embeds: [embed] });
   },
 };

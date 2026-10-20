@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { UPGRADES, getUpgradeLevel, getUpgradeCost } from '../../utils/economyConfig.js';
 
@@ -82,7 +82,6 @@ export default {
       });
 
       const description = [
-        header('💼', 'Mejoras disponibles'),
         block([kv('Tu balance', `\`${formatNumber(economy.balance)} coins\``)]),
         '',
         lines.join('\n\n'),
@@ -92,7 +91,7 @@ export default {
 
       const embed = createEmbed({
         color: COLORS.ECONOMY,
-        title: '💼 Mejoras',
+        title: '💼 Mejoras disponibles',
         description,
         footer: {
           text: `Solicitado por ${interaction.user.username}`,
@@ -150,18 +149,20 @@ export default {
         effectFormatted = `+${formatNumber(effectText)} coins`;
       }
 
-      const description = [
-        header('✅', 'Mejora comprada'),
-        block([
-          kv('Mejora', config.name),
-          kv('Nivel', `\`${newLevel}/${config.maxLevel}\``),
-          kv('Efecto', effectFormatted),
-          kv('Coste', `\`${formatNumber(cost)} coins\``),
-          kv('Balance restante', `\`${formatNumber(economy.balance - cost)} coins\``),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('Mejora', config.name),
+        kv('Nivel', `\`${newLevel}/${config.maxLevel}\``),
+        kv('Efecto', effectFormatted),
+        kv('Coste', `\`${formatNumber(cost)} coins\``),
+        kv('Balance restante', `\`${formatNumber(economy.balance - cost)} coins\``),
+      ]);
 
-      const embed = successEmbed(description);
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '✅ Mejora comprada',
+        description,
+      });
+
       return interaction.editReply({ embeds: [embed] });
     }
   },

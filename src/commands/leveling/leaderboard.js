@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
 import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
-import { header, kv, getMedal, formatNumber } from '../../utils/embedDecorations.js';
+import { getMedal, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildLeaderboard } from '../../utils/levelSystem.js';
 import { User } from '../../models/User.js';
 
@@ -38,12 +38,12 @@ export default {
         });
       }
 
-      const lines = top.map((u, i) => {
-        return `${getMedal(i)} <@${u.userId}> — **Nv. ${u.level}** · \`${formatNumber(u.xp)} XP\``;
-      });
+      const lines = top.map((u, i) =>
+        `${getMedal(i)} <@${u.userId}> — **Nv. ${u.level}** · \`${formatNumber(u.xp)} XP\``
+      );
 
       const description = [
-        header('🏆', `Top niveles · ${interaction.guild.name}`),
+        `-# Top niveles de **${interaction.guild.name}**`,
         '',
         lines.join('\n'),
       ].join('\n');
@@ -71,12 +71,12 @@ export default {
         });
       }
 
-      const lines = top.map((u, i) => {
-        return `${getMedal(i)} <@${u.userId}> — **Nv. ${u.level}** · \`${formatNumber(u.xp)} XP\``;
-      });
+      const lines = top.map((u, i) =>
+        `${getMedal(i)} <@${u.userId}> — **Nv. ${u.level}** · \`${formatNumber(u.xp)} XP\``
+      );
 
       const description = [
-        header('🌍', 'Top niveles globales'),
+        `-# Top niveles globales del bot`,
         '',
         lines.join('\n'),
       ].join('\n');

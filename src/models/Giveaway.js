@@ -13,11 +13,12 @@ const GiveawaySchema = new mongoose.Schema({
   requiredRoleId: { type: String, default: null },
   requiredLevel: { type: Number, default: null },
   requiredLevelType: { type: String, enum: ['global', 'guild'], default: 'guild' },
-  
+
   participants: { type: [String], default: [] },
+  leftParticipants: { type: [String], default: [] },
   winners: { type: [String], default: [] },
   ended: { type: Boolean, default: false },
-  lastEdit: { type: Date, default: null }
+  lastEdit: { type: Date, default: null },
 });
 
 export const Giveaway = mongoose.model('Giveaway', GiveawaySchema);

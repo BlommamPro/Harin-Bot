@@ -50,7 +50,6 @@ export default {
 
     const description = [
       block([
-        kv('Usuario', target.tag),
         kv('Cuenta creada', formatRelativeTime(target.createdTimestamp)),
         kv('Mensajes', `\`${formatNumber(data.messages || 0)}\``),
         kv('Racha diaria', `\`${economy.dailyStreak || 0} días\``),

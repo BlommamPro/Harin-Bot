@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, ChannelType, MessageFlags } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 import { parseTime } from '../../utils/parseTime.js';
 
 export default {
@@ -42,17 +42,22 @@ export default {
     if (['off', 'desactivar', '0', '0s'].includes(timeInput)) {
       await targetChannel.setRateLimitPerUser(0, `${interaction.user.tag}: ${reason}`);
 
-      const description = [
-        header('🐢', 'Slowmode desactivado'),
-        block([
-          kv('Canal', targetChannel),
-          kv('Razón', reason),
-          kv('Moderador', interaction.user),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('Canal', targetChannel),
+        kv('Razón', reason),
+        kv('Moderador', interaction.user),
+      ]);
 
-      const embed = successEmbed(description);
-      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '🐢 Slowmode desactivado',
+        description,
+        footer: {
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
+      });
+
       return interaction.reply({ embeds: [embed] });
     }
 
@@ -72,18 +77,23 @@ export default {
     try {
       await targetChannel.setRateLimitPerUser(seconds, `${interaction.user.tag}: ${reason}`);
 
-      const description = [
-        header('🐢', 'Slowmode activado'),
-        block([
-          kv('Canal', targetChannel),
-          kv('Tiempo', parsed.text),
-          kv('Razón', reason),
-          kv('Moderador', interaction.user),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('Canal', targetChannel),
+        kv('Tiempo', parsed.text),
+        kv('Razón', reason),
+        kv('Moderador', interaction.user),
+      ]);
 
-      const embed = successEmbed(description);
-      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+      const embed = createEmbed({
+        color: COLORS.MODERATION,
+        title: '🐢 Slowmode activado',
+        description,
+        footer: {
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
+      });
+
       await interaction.reply({ embeds: [embed] });
     } catch (err) {
       return interaction.reply({ embeds: [errorEmbed(`No pude aplicar slowmode: ${err.message}`)], flags: MessageFlags.Ephemeral });

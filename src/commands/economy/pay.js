@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
@@ -63,16 +63,18 @@ export default {
     });
     await setDbCooldown(interaction.user.id, `pay_${interaction.guildId}`);
 
-    const description = [
-      header('💸', 'Transferencia completada'),
-      block([
-        kv('Destinatario', target),
-        kv('Cantidad', `\`${formatNumber(amount)} coins\``),
-        kv('Tu balance', `\`${formatNumber(economy.balance - amount)} coins\``),
-      ]),
-    ].join('\n');
+    const description = block([
+      kv('Destinatario', target),
+      kv('Cantidad', `\`${formatNumber(amount)} coins\``),
+      kv('Tu balance', `\`${formatNumber(economy.balance - amount)} coins\``),
+    ]);
 
-    const embed = successEmbed(description);
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '💸 Transferencia completada',
+      description,
+    });
+
     return interaction.editReply({ embeds: [embed] });
   },
 };

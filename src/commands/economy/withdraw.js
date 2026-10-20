@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 
 export default {
@@ -48,17 +48,19 @@ export default {
     const newWallet = (economy?.balance || 0) + amount;
     const newBank = currentBank - amount;
 
-    const description = [
-      header('🏦', 'Retiro exitoso'),
-      block([
-        kv('Retirado', `\`${formatNumber(amount)} coins\``),
-        kv('En mano', `\`${formatNumber(newWallet)} coins\``),
-        kv('Banco', `\`${formatNumber(newBank)} coins\``),
-        kv('Total', `\`${formatNumber(newWallet + newBank)} coins\``),
-      ]),
-    ].join('\n');
+    const description = block([
+      kv('Retirado', `\`${formatNumber(amount)} coins\``),
+      kv('En mano', `\`${formatNumber(newWallet)} coins\``),
+      kv('Banco', `\`${formatNumber(newBank)} coins\``),
+      kv('Total', `\`${formatNumber(newWallet + newBank)} coins\``),
+    ]);
 
-    const embed = successEmbed(description);
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '🏦 Retiro exitoso',
+      description,
+    });
+
     return interaction.editReply({ embeds: [embed] });
   },
 };

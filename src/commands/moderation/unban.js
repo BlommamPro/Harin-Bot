@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 import { addModLog } from '../../utils/modlog.js';
 
 export default {
@@ -41,17 +41,22 @@ export default {
       await interaction.guild.bans.remove(userId, `${interaction.user.tag}: ${reason}`);
       await addModLog(interaction.guildId, userId, interaction.user.id, 'unban', reason);
 
-      const description = [
-        header('🔓', 'Usuario desbaneado'),
-        block([
-          kv('Usuario', `${bannedUser.tag} (\`${bannedUser.id}\`)`),
-          kv('Razón', reason),
-          kv('Moderador', interaction.user),
-        ]),
-      ].join('\n');
+      const description = block([
+        kv('Usuario', `${bannedUser.tag} (\`${bannedUser.id}\`)`),
+        kv('Razón', reason),
+        kv('Moderador', interaction.user),
+      ]);
 
-      const embed = successEmbed(description);
-      embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: '🔓 Usuario desbaneado',
+        description,
+        footer: {
+          text: `Moderador: ${interaction.user.username}`,
+          icon: interaction.user.displayAvatarURL(),
+        },
+      });
+
       await interaction.reply({ embeds: [embed] });
     } catch (err) {
       return interaction.reply({ embeds: [errorEmbed(`No pude desbanear al usuario: ${err.message}`)], flags: MessageFlags.Ephemeral });

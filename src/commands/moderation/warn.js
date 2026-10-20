@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 import { addWarn, getWarnCount, checkAutoAction, getWarnConfig } from '../../utils/warns.js';
 import { addModLog } from '../../utils/modlog.js';
 
@@ -11,15 +11,10 @@ export default {
     .setDMPermission(false)
     .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers)
     .addUserOption(opt =>
-      opt.setName('usuario')
-         .setDescription('Usuario a advertir')
-         .setRequired(true)
+      opt.setName('usuario').setDescription('Usuario a advertir').setRequired(true)
     )
     .addStringOption(opt =>
-      opt.setName('razon')
-         .setDescription('Razón de la advertencia')
-         .setRequired(false)
-         .setMaxLength(512)
+      opt.setName('razon').setDescription('Razón de la advertencia').setRequired(false).setMaxLength(512)
     ),
 
   PERMISSIONS: ['ModerateMembers'],
@@ -60,22 +55,21 @@ export default {
         const dmEmbed = createEmbed({
           color: COLORS.MODERATION,
           title: `⚠️ Advertencia en ${interaction.guild.name}`,
-          description: [
-            header('📋', 'Detalles'),
-            block([
-              kv('Razón', reason),
-              kv('Moderador', interaction.user.tag),
-              kv('Total de warns', `\`${warnCount}\``),
-            ]),
-          ].join('\n'),
-          footer: { text: `ID del warn: ${warnDoc._id.toString().slice(-6)}`, icon: interaction.guild.iconURL() },
+          description: block([
+            kv('Razón', reason),
+            kv('Moderador', interaction.user.tag),
+            kv('Total de warns', `\`${warnCount}\``),
+          ]),
+          footer: {
+            text: `ID del warn: ${warnDoc._id.toString().slice(-6)}`,
+            icon: interaction.guild.iconURL(),
+          },
         });
         await target.send({ embeds: [dmEmbed] });
       } catch { /* DM cerrado */ }
     }
 
     const lines = [
-      header('⚠️', 'Usuario advertido'),
       block([
         kv('Usuario', `${target} (\`${target.id}\`)`),
         kv('Razón', reason),
@@ -91,16 +85,22 @@ export default {
         timeout: `silenciado por ${autoAction.duration || 'un tiempo'} minutos`,
       };
       if (autoAction.success) {
-        lines.push('', header('🤖', 'Acción automática'));
-        lines.push(`-# El usuario fue **${actionText[autoAction.action] || autoAction.action}**.`);
+        lines.push('', `-# 🤖 Acción automática: el usuario fue **${actionText[autoAction.action] || autoAction.action}**.`);
       } else {
-        lines.push('', header('❌', 'Error en acción automática'));
-        lines.push(`-# ${autoAction.error}`);
+        lines.push('', `-# ❌ Error en acción automática: ${autoAction.error}`);
       }
     }
 
-    const embed = successEmbed(lines.join('\n'));
-    embed.setFooter({ text: `Moderador: ${interaction.user.username}`, icon: interaction.user.displayAvatarURL() });
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '⚠️ Usuario advertido',
+      description: lines.join('\n'),
+      footer: {
+        text: `Moderador: ${interaction.user.username}`,
+        icon: interaction.user.displayAvatarURL(),
+      },
+    });
+
     await interaction.reply({ embeds: [embed] });
   },
 };

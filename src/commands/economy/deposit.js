@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { getGuildLevel } from '../../utils/levelSystem.js';
 import { getUpgradeEffect } from '../../utils/economyConfig.js';
@@ -76,17 +76,19 @@ export default {
     const newWallet = currentWallet - amount;
     const newBank = currentBank + amount;
 
-    const description = [
-      header('🏦', 'Depósito exitoso'),
-      block([
-        kv('Depositado', `\`${formatNumber(amount)} coins\``),
-        kv('En mano', `\`${formatNumber(newWallet)} coins\``),
-        kv('Banco', `\`${formatNumber(newBank)} / ${formatNumber(maxCapacity)}\``),
-        kv('Total', `\`${formatNumber(newWallet + newBank)} coins\``),
-      ]),
-    ].join('\n');
+    const description = block([
+      kv('Depositado', `\`${formatNumber(amount)} coins\``),
+      kv('En mano', `\`${formatNumber(newWallet)} coins\``),
+      kv('Banco', `\`${formatNumber(newBank)} / ${formatNumber(maxCapacity)}\``),
+      kv('Total', `\`${formatNumber(newWallet + newBank)} coins\``),
+    ]);
 
-    const embed = successEmbed(description);
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '🏦 Depósito exitoso',
+      description,
+    });
+
     return interaction.editReply({ embeds: [embed] });
   },
 };

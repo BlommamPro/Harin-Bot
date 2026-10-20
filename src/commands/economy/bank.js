@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
-import { header, block, kv, createProgressBar, formatNumber } from '../../utils/embedDecorations.js';
+import { block, kv, createProgressBar, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy } from '../../utils/guildData.js';
 import { getGuildLevel } from '../../utils/levelSystem.js';
 import { getUpgradeEffect } from '../../utils/economyConfig.js';
@@ -33,7 +33,6 @@ export default {
 
     const target = interaction.options.getUser('usuario') || interaction.user;
     const data = await getGuildEconomy(interaction.guildId, target.id, target.username);
-
     const guildLevelData = await getGuildLevel(interaction.guildId, target.id);
     const level = guildLevelData.level || 1;
 
@@ -41,25 +40,24 @@ export default {
     const bank = data?.bank || 0;
     const total = wallet + bank;
     const maxCapacity = getBankCapacity(level, data.upgrades);
+
     const bar = createProgressBar(bank, maxCapacity, 14);
     const pct = maxCapacity > 0 ? Math.round((bank / maxCapacity) * 100) : 0;
 
     const description = [
-      header('💰', 'Balance'),
       block([
         kv('En mano', `\`${formatNumber(wallet)} coins\``),
         kv('Banco', `\`${formatNumber(bank)} / ${formatNumber(maxCapacity)}\``),
         kv('Total', `\`${formatNumber(total)} coins\``),
       ]),
       '',
-      header('🏦', 'Capacidad del banco'),
       `\`${bar}\` **${pct}%**`,
       `-# Nivel del servidor: **${level}** · La mejora \`better_bank\` multiplica la capacidad`,
     ].join('\n');
 
     const embed = createEmbed({
       color: COLORS.ECONOMY,
-      title: `💰 ${target.username}`,
+      title: `💰 Balance de ${target.username}`,
       thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
       description,
       footer: {

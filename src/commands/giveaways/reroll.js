@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 import { rerollGiveaway } from '../../utils/giveawayHandler.js';
 
 export default {
@@ -30,16 +30,19 @@ export default {
       });
     }
 
-    const description = [
-      header('🔁', 'Nuevo ganador'),
-      block([
-        kv('ID', `\`${id}\``),
-        kv('Ganador', `<@${winner}>`),
-      ]),
-    ].join('\n');
+    const description = block([
+      kv('ID', `\`${id}\``),
+      kv('Ganador', `<@${winner}>`),
+    ]);
+
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '🔁 Nuevo ganador',
+      description,
+    });
 
     await interaction.reply({
-      embeds: [successEmbed(description)],
+      embeds: [embed],
       content: `<@${winner}>`,
     });
   },

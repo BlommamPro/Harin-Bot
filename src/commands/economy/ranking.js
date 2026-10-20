@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
-import { header, getMedal, formatNumber } from '../../utils/embedDecorations.js';
+import { getMedal, formatNumber } from '../../utils/embedDecorations.js';
 import { WeeklyRanking } from '../../models/WeeklyRanking.js';
 
 function getWeekStart() {
@@ -52,13 +52,12 @@ export default {
       });
     }
 
-    const lines = top.map((u, i) => {
-      return `${getMedal(i)} <@${u.userId}> — **${formatNumber(u.coinsEarned)}** coins`;
-    });
+    const lines = top.map((u, i) =>
+      `${getMedal(i)} <@${u.userId}> — **${formatNumber(u.coinsEarned)}** coins`
+    );
 
     const description = [
-      header('📊', 'Ranking semanal'),
-      `Semana actual: <t:${Math.floor(weekStart.getTime() / 1000)}:D>`,
+      `-# Semana actual: <t:${Math.floor(weekStart.getTime() / 1000)}:D>`,
       '',
       lines.join('\n'),
       '',
@@ -67,7 +66,7 @@ export default {
 
     const embed = createEmbed({
       color: COLORS.ECONOMY,
-      title: `📊 ${interaction.guild.name}`,
+      title: `📊 Ranking semanal · ${interaction.guild.name}`,
       description,
       footer: {
         text: `Solicitado por ${interaction.user.username}`,

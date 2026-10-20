@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { applyBetLuck } from '../../utils/applyUpgrades.js';
@@ -66,28 +66,40 @@ export default {
 
     await setDbCooldown(interaction.user.id, `coinflip_${interaction.guildId}`);
 
-    const lines = [
-      header('🪙', `Resultado: ${result.toUpperCase()}`),
-      block([
-        kv('Tu elección', side.toUpperCase()),
-        won
-          ? kv('Ganancia', `\`${formatNumber(applyBetLuck(amount, economy.upgrades))} coins\``)
-          : kv('Pérdida', `\`${formatNumber(amount)} coins\``),
-      ]),
-    ];
-
     if (won) {
       const winnings = applyBetLuck(amount, economy.upgrades);
       await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: winnings } });
       await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, winnings);
 
-      const embed = successEmbed(lines.join('\n'), '🪙 ¡Ganaste!');
+      const description = block([
+        kv('Resultado', `**${result.toUpperCase()}**`),
+        kv('Tu elección', `**${side.toUpperCase()}**`),
+        kv('Ganancia', `\`${formatNumber(winnings)} coins\``),
+      ]);
+
+      const embed = createEmbed({
+        color: COLORS.SUCCESS,
+        title: `🪙 ¡Ganaste! Cayó ${result.toUpperCase()}`,
+        description,
+      });
+
       return interaction.editReply({ embeds: [embed] });
     }
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -amount } });
 
-    const embed = errorEmbed(lines.join('\n'), '🪙 Perdiste');
+    const description = block([
+      kv('Resultado', `**${result.toUpperCase()}**`),
+      kv('Tu elección', `**${side.toUpperCase()}**`),
+      kv('Pérdida', `\`${formatNumber(amount)} coins\``),
+    ]);
+
+    const embed = createEmbed({
+      color: COLORS.ERROR,
+      title: `🪙 Perdiste · cayó ${result.toUpperCase()}`,
+      description,
+    });
+
     return interaction.editReply({ embeds: [embed] });
   },
 };

@@ -10,8 +10,8 @@ import {
   errorEmbed,
   COLORS,
 } from "../../utils/embeds.js";
+import { block, header, kv } from "../../utils/embedDecorations.js";
 import { LevelConfig } from "../../models/LevelConfig.js";
-import { GuildLevel } from "../../models/GuildLevel.js";
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -102,17 +102,6 @@ export default {
         ),
     )
     .addSubcommand((sub) =>
-      sub
-        .setName("reset")
-        .setDescription("Reiniciar niveles de un usuario o todos (solo en este servidor)")
-        .addUserOption((opt) =>
-          opt
-            .setName("usuario")
-            .setDescription("Usuario a reiniciar (dejar vacío para TODOS en este servidor)")
-            .setRequired(false),
-        ),
-    )
-    .addSubcommand((sub) =>
       sub.setName("view").setDescription("Ver configuración actual"),
     ),
 
@@ -136,7 +125,7 @@ export default {
       return interaction.reply({
         embeds: [
           successEmbed(
-            `Sistema de niveles: ${enable ? 'activado' : 'desactivado'}`,
+            `Sistema de niveles: ${enable ? "activado" : "desactivado"}`,
           ),
         ],
       });
@@ -305,72 +294,45 @@ export default {
       });
     }
 
-    if (sub === "reset") {
-      const target = interaction.options.getUser("usuario");
-
-      if (target) {
-        let userLevel = await GuildLevel.findOne({
-          guildId,
-          userId: target.id,
-        });
-
-        if (userLevel) {
-          userLevel.xp = 0;
-          userLevel.level = 1;
-          await userLevel.save();
-        } else {
-          await GuildLevel.create({
-            guildId,
-            userId: target.id,
-            xp: 0,
-            level: 1,
-          });
-        }
-
-        return interaction.reply({
-          embeds: [
-            successEmbed(
-              `Nivel de ${target} reiniciado en **${interaction.guild.name}**.`,
-            ),
-          ],
-        });
-      } else {
-        const deletedCount = await GuildLevel.deleteMany({ guildId });
-        return interaction.reply({
-          embeds: [
-            successEmbed(
-              `Niveles de **${deletedCount.deletedCount}** usuarios reiniciados en **${interaction.guild.name}**.`,
-            ),
-          ],
-        });
-      }
-    }
-
     if (sub === "view") {
       const config = await LevelConfig.findOne({ guildId });
 
       const rolesText = config?.roles?.length
         ? config.roles
-            .map((r) => `Nivel **${r.level}**: <@&${r.roleId}>`)
+            .map((r) => `> Nivel **${r.level}** → <@&${r.roleId}>`)
             .join("\n")
-        : "Ninguno";
+        : "`Ninguno`";
 
       const ignoredText = config?.ignoredChannels?.length
         ? config.ignoredChannels.map((id) => `<#${id}>`).join(", ")
-        : "Ninguno";
+        : "`Ninguno`";
+
+      const description = [
+        header("⭐", "Estado general"),
+        block([
+          kv("Sistema", config?.enabled ? "✅ Activado" : "❌ Desactivado"),
+          kv(
+            "Canal de anuncios",
+            config?.announceChannel ? `<#${config.announceChannel}>` : "`No configurado`",
+          ),
+          kv("XP por mensaje", `\`${config?.xpMin ?? 15} - ${config?.xpMax ?? 25}\``),
+          kv("Cooldown", `\`${config?.cooldownSeconds ?? 60}s\``),
+        ]),
+        "",
+        header("💬", "Mensaje de subida"),
+        `> ${config?.levelUpMessage || "🎉 ¡{user} ha subido al nivel **{level}**!"}`,
+        "",
+        header("📢", "Canales excluidos"),
+        ignoredText,
+        "",
+        header("🎭", "Roles por nivel"),
+        rolesText,
+      ].join("\n");
 
       const embed = createEmbed({
         color: COLORS.INFO,
-        title: "Configuración de niveles",
-        description: [
-          `**Estado:** ${config?.enabled ? 'Activado' : 'Desactivado'}`,
-          `**Canal de anuncios:** ${config?.announceChannel ? `<#${config.announceChannel}>` : "No configurado"}`,
-          `**Mensaje de subida:** ${config?.levelUpMessage || "🎉 ¡{user} ha subido al nivel **{level}**!"}`,
-          `**Canales excluidos:** ${ignoredText}`,
-          `**Roles por nivel:**\n${rolesText}`,
-          `**XP por mensaje:** ${config?.xpMin || 15} - ${config?.xpMax || 25}`,
-          `**Cooldown:** ${config?.cooldownSeconds || 60} segundos`,
-        ].join("\n"),
+        title: `⭐ Configuración de niveles · ${interaction.guild.name}`,
+        description,
         footer: {
           text: `Solicitado por ${interaction.user.username}`,
           icon: interaction.user.displayAvatarURL(),

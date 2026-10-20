@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { successEmbed, errorEmbed } from '../../utils/embeds.js';
-import { header, block, kv, formatNumber } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
@@ -68,21 +68,21 @@ export default {
     const [a, b, c] = spin();
 
     let baseWinnings = 0;
-    let title = '';
+    let resultTitle = '';
     let isWin = false;
 
     if (a === b && b === c) {
-      if (a === '7️⃣') { baseWinnings = amount * 10; title = 'Mega jackpot · 7️⃣7️⃣7️⃣'; }
-      else if (a === '💎') { baseWinnings = amount * 5; title = 'Diamond jackpot'; }
-      else { baseWinnings = amount * 3; title = 'Jackpot'; }
+      if (a === '7️⃣') { baseWinnings = amount * 10; resultTitle = 'Mega jackpot · 7️⃣7️⃣7️⃣'; }
+      else if (a === '💎') { baseWinnings = amount * 5; resultTitle = 'Diamond jackpot'; }
+      else { baseWinnings = amount * 3; resultTitle = 'Jackpot'; }
       isWin = true;
     } else if (a === b || b === c || a === c) {
       baseWinnings = amount * 1.5;
-      title = 'Casi · dos iguales';
+      resultTitle = 'Casi · dos iguales';
       isWin = true;
     } else {
       baseWinnings = -amount;
-      title = 'Mala suerte';
+      resultTitle = 'Mala suerte';
     }
 
     let winnings = baseWinnings;
@@ -107,9 +107,7 @@ export default {
     const display = `| ${a} | ${b} | ${c} |`;
     const netWin = isWin ? winnings - amount : -amount;
 
-    const lines = [
-      header(isWin ? '🎉' : '💀', title),
-      '',
+    const description = [
       display,
       '',
       block([
@@ -117,16 +115,20 @@ export default {
         kv(isWin ? 'Ganancia' : 'Pérdida', `\`${formatNumber(Math.abs(netWin))} coins\``),
         kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
       ]),
-    ];
+    ].join('\n');
+
+    const embed = createEmbed({
+      color: isWin ? COLORS.SUCCESS : COLORS.ERROR,
+      title: `${isWin ? '🎰' : '💀'} ${resultTitle}`,
+      description,
+    });
 
     if (newAchievements.length > 0) {
-      lines.push('', header('🏆', 'Logros desbloqueados'));
-      lines.push(newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'));
+      embed.addFields({
+        name: '🏆 Logros desbloqueados',
+        value: newAchievements.map(a => `${a.emoji} **${a.name}**`).join('\n'),
+      });
     }
-
-    const embed = isWin
-      ? successEmbed(lines.join('\n'), '🎰 Ganaste')
-      : errorEmbed(lines.join('\n'), '🎰 Perdiste');
 
     return interaction.editReply({ embeds: [embed] });
   },

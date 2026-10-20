@@ -1,6 +1,13 @@
-import { SlashCommandBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ActionRowBuilder, MessageFlags } from 'discord.js';
+import {
+  SlashCommandBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  ActionRowBuilder,
+  MessageFlags,
+} from 'discord.js';
 import { createEmbed, COLORS } from '../../utils/embeds.js';
 import { header, block, kv } from '../../utils/embedDecorations.js';
+import { config } from '../../../config/config.js';
 
 const CATEGORY_INFO = {
   general: { label: 'General', emoji: '🌐', description: 'Comandos generales' },
@@ -9,7 +16,7 @@ const CATEGORY_INFO = {
   economy: { label: 'Economía', emoji: '💰', description: 'Sistema de economía' },
   leveling: { label: 'Niveles', emoji: '⭐', description: 'Sistema de niveles' },
   giveaways: { label: 'Sorteos', emoji: '🎁', description: 'Sistema de sorteos' },
-  owner: { label: 'Dueño', emoji: '👑', description: 'Comandos exclusivos del dueño' },
+  owner: { label: 'Dueño del bot', emoji: '👑', description: 'Comandos exclusivos del owner' },
 };
 
 function getCategoryInfo(catName) {
@@ -32,9 +39,13 @@ export default {
   GUILD_ONLY: false,
 
   async execute(client, interaction) {
-    const categories = new Map();
+    const isOwner = config.ownerIds.includes(interaction.user.id);
 
-    for (const [, cmd] of client.slashCommands) {
+    const visibleCommands = [...client.slashCommands.values()]
+      .filter(cmd => isOwner || cmd.OWNER !== true);
+
+    const categories = new Map();
+    for (const cmd of visibleCommands) {
       const cat = (cmd.CATEGORY || 'general').toLowerCase();
       categories.set(cat, (categories.get(cat) || 0) + 1);
     }
@@ -44,12 +55,13 @@ export default {
       '',
       header('📊', 'Resumen'),
       block([
-        kv('Comandos totales', `\`${client.slashCommands.size}\``),
+        kv('Comandos totales', `\`${visibleCommands.length}\``),
         kv('Categorías', `\`${categories.size}\``),
       ]),
       '',
+      isOwner ? '-# 👑 Tienes acceso a comandos exclusivos de owner.' : '',
       `[Política de Privacidad](https://blommampro.github.io/harin-bot-legal/privacy)`,
-    ].join('\n');
+    ].filter(Boolean).join('\n');
 
     const embed = createEmbed({
       color: COLORS.INFO,

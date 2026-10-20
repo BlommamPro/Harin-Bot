@@ -1,6 +1,6 @@
 import { SlashCommandBuilder, PermissionFlagsBits, MessageFlags } from 'discord.js';
-import { errorEmbed, successEmbed } from '../../utils/embeds.js';
-import { header, block, kv } from '../../utils/embedDecorations.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv } from '../../utils/embedDecorations.js';
 import { endGiveaway } from '../../utils/giveawayHandler.js';
 
 export default {
@@ -34,16 +34,18 @@ export default {
       ? result.winners.map(w => `<@${w}>`).join(', ')
       : '`Nadie`';
 
-    const description = [
-      header('🏁', 'Sorteo finalizado'),
-      block([
-        kv('ID', `\`${id}\``),
-        kv('Ganadores', winners),
-        kv('Participantes', `\`${result.participants.length}\``),
-      ]),
-    ].join('\n');
+    const description = block([
+      kv('ID', `\`${id}\``),
+      kv('Ganadores', winners),
+      kv('Participantes', `\`${result.participants.length}\``),
+    ]);
 
-    const embed = successEmbed(description);
+    const embed = createEmbed({
+      color: COLORS.SUCCESS,
+      title: '🏁 Sorteo finalizado',
+      description,
+    });
+
     await interaction.reply({ embeds: [embed] });
   },
 };

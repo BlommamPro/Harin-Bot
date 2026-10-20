@@ -1,5 +1,6 @@
 import { createEmbed, COLORS } from '../../../utils/embeds.js';
 import { header } from '../../../utils/embedDecorations.js';
+import { config } from '../../../../config/config.js';
 
 const CATEGORY_NAMES = {
   general: 'General',
@@ -9,7 +10,7 @@ const CATEGORY_NAMES = {
   economy: 'Economía',
   music: 'Música',
   utility: 'Utilidad',
-  owner: 'Dueño',
+  owner: 'Dueño del bot',
   nsfw: 'NSFW',
   tickets: 'Tickets',
   giveaways: 'Sorteos',
@@ -40,13 +41,14 @@ export default {
     await interaction.deferUpdate();
 
     const selectedCategory = interaction.values[0];
+    const isOwner = config.ownerIds.includes(interaction.user.id);
 
     const commands = [];
     for (const [, cmd] of client.slashCommands) {
       const cat = (cmd.CATEGORY || 'general').toLowerCase();
-      if (cat === selectedCategory) {
-        commands.push(`\`/${cmd.CMD.name}\` — ${cmd.CMD.description}`);
-      }
+      if (cat !== selectedCategory) continue;
+      if (cmd.OWNER === true && !isOwner) continue;
+      commands.push(`\`/${cmd.CMD.name}\` — ${cmd.CMD.description}`);
     }
 
     commands.sort();
