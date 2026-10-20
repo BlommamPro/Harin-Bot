@@ -1,20 +1,19 @@
 import { createEmbed, COLORS } from '../../../utils/embeds.js';
-import { header } from '../../../utils/embedDecorations.js';
 import { config } from '../../../../config/config.js';
 
 const CATEGORY_NAMES = {
   general: 'General',
   moderation: 'Moderación',
   administration: 'Administración',
-  fun: 'Diversión',
   economy: 'Economía',
+  leveling: 'Niveles',
+  giveaways: 'Sorteos',
+  owner: 'Dueño del bot',
+  fun: 'Diversión',
   music: 'Música',
   utility: 'Utilidad',
-  owner: 'Dueño del bot',
   nsfw: 'NSFW',
   tickets: 'Tickets',
-  giveaways: 'Sorteos',
-  leveling: 'Niveles',
   welcome: 'Bienvenida',
   logs: 'Logs',
 };
@@ -59,7 +58,7 @@ export default {
     const emoji = CATEGORY_EMOJIS[selectedCategory] || '📁';
 
     const description = commands.length
-      ? [header(emoji, displayName), '', commands.join('\n')].join('\n')
+      ? commands.join('\n')
       : 'No hay comandos en esta categoría.';
 
     const embed = createEmbed({
