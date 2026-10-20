@@ -74,7 +74,6 @@ export default {
   async execute(client, interaction) {
     const sub = interaction.options.getSubcommand();
 
-    // ── LIST ──
     if (sub === 'list') {
       const order = interaction.options.getString('orden') || 'recent';
       let guilds = Array.from(client.guilds.cache.values());

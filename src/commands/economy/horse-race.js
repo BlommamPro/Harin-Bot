@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
@@ -6,7 +6,7 @@ import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
 import {
   createRace, getRace, deleteRace,
-  HORSES, simulateRace, renderTrack, getRaceComment,
+  HORSES, simulateRace, renderTrack, getRaceComment, getHorseWinChance,
   addBotPlayer,
   isGuildBusy, setGuildCooldown, clearGuildCooldown,
 } from '../../utils/horseRaceHandler.js';
@@ -90,6 +90,12 @@ export default {
             return `> ${p.isBot ? '🤖' : '👤'} ${h.emoji} **${h.name}** · \`${formatNumber(p.bet)} coins\``;
           }).join('\n');
 
+      const horseTable = HORSES.map((h, i) => {
+        const pct = getHorseWinChance(i);
+        const example = Math.floor(100 * h.odds);
+        return `> **${i + 1}.** ${h.emoji} ${h.name.padEnd(9, ' ')} · \`${pct}%\` · \`x${h.odds}\` · \`100→${example}\``;
+      }).join('\n');
+
       return createEmbed({
         color: COLORS.ECONOMY,
         title: '🐎 Carrera de caballos',
@@ -102,7 +108,9 @@ export default {
           ]),
           '',
           '**🐎 Caballos**',
-          HORSES.map((h, i) => `> **${i + 1}.** ${h.emoji} ${h.name}`).join('\n'),
+          '> **Prob** = probabilidad estimada · **x** = multiplicador · **100→** = si apuestas 100 y ganas',
+          '',
+          horseTable,
           '',
           '**👥 Jugadores**',
           playersText,
@@ -136,8 +144,8 @@ export default {
     const emptyTimer = setTimeout(async () => {
       const r = getRace(raceId);
       if (!r || r.status !== 'lobby') return;
-      const humanPlayers = [...r.players.values()].filter(p => !p.isBot).length;
-      if (humanPlayers === 0) {
+      const humans = [...r.players.values()].filter(p => !p.isBot);
+      if (humans.length === 0) {
         addBotPlayer(raceId, 'Bot');
         await runRace(client, msg, raceId);
       }
@@ -146,8 +154,13 @@ export default {
     const humanTimer = setTimeout(async () => {
       const r = getRace(raceId);
       if (!r || r.status !== 'lobby') return;
-      const humanPlayers = [...r.players.values()].filter(p => !p.isBot).length;
-      if (humanPlayers > 0) {
+      const humans = [...r.players.entries()].filter(([_, p]) => !p.isBot);
+
+      if (humans.length > 0) {
+        if (humans.length === 1) {
+          const [, humanPlayer] = humans[0];
+          addBotPlayer(raceId, 'Bot', humanPlayer.horseIndex);
+        }
         await runRace(client, msg, raceId);
       }
     }, JOIN_TIME_HUMAN);
@@ -205,9 +218,13 @@ export async function runRace(client, message, raceId) {
 
   const winners = [];
   const losers = [];
+  const humanResults = [];
 
   for (const [userId, player] of race.players) {
-    if (player.horseIndex === winnerIndex) {
+    const won = player.horseIndex === winnerIndex;
+    const horse = HORSES[player.horseIndex];
+
+    if (won) {
       const base = Math.floor(player.bet * winnerHorse.odds);
 
       if (player.isBot) {
@@ -222,9 +239,13 @@ export async function runRace(client, message, raceId) {
         await addWeeklyCoins(race.guildId, userId, '', finalPayout - player.bet);
 
         winners.push({ userId, player, payout: finalPayout, isBot: false });
+        humanResults.push({ userId, player, horse, won: true, profit: finalPayout - player.bet });
       }
     } else {
       losers.push({ userId, player });
+      if (!player.isBot) {
+        humanResults.push({ userId, player, horse, won: false, profit: -player.bet });
+      }
     }
   }
 
@@ -243,13 +264,22 @@ export async function runRace(client, message, raceId) {
       }).join('\n')
     : '> `Nadie`';
 
+  const yourResult = humanResults.length > 0
+    ? humanResults.map(r => {
+        return `> ${r.horse.emoji} **${r.horse.name}** → ${r.won ? '✅ **Ganaste**' : '❌ **Perdiste**'} \`${r.profit >= 0 ? '+' : ''}${formatNumber(r.profit)}\` coins`;
+      }).join('\n')
+    : '> `Nadie`';
+
   const description = [
     `🏆 **${winnerHorse.emoji} ${winnerHorse.name}** ganó la carrera`,
     '',
-    '**Ganadores**',
+    '**🎯 Tu resultado**',
+    yourResult,
+    '',
+    '**🏅 Ganadores**',
     winnerLines,
     '',
-    '**Perdedores**',
+    '**💸 Perdedores**',
     loserLines,
   ].join('\n');
 

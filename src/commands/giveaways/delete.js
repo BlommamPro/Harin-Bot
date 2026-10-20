@@ -42,7 +42,6 @@ export default {
         ? await channel.messages.fetch(gw.messageId).catch(() => null)
         : null;
 
-      // Editamos el mensaje original si existe
       if (message) {
         const cancelEmbed = createEmbed({
           color: COLORS.ERROR,
@@ -57,7 +56,6 @@ export default {
         await message.edit({ embeds: [cancelEmbed], components: [] }).catch(() => {});
       }
 
-      // Eliminamos de la DB
       await Giveaway.deleteOne({ _id: gw._id });
 
       logger.warn(
