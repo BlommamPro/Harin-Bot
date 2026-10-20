@@ -9,6 +9,11 @@ const DEFAULTS = {
   slotsCooldownSeconds: 15,
   blackjackCooldownSeconds: 10,
   payCooldownMinutes: 1,
+
+  fishCooldownMinutes: 5,
+  mineCooldownMinutes: 8,
+  horseRaceCooldownMinutes: 2,
+
   dailyReward: 100,
   dailyStreakBonus: 50,
   workMinReward: 25,

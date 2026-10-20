@@ -12,6 +12,10 @@ const EconomyConfigSchema = new mongoose.Schema({
   blackjackCooldownSeconds: { type: Number, default: 10 },
   payCooldownMinutes: { type: Number, default: 1 },
 
+  fishCooldownMinutes: { type: Number, default: 5 },
+  mineCooldownMinutes: { type: Number, default: 8 },
+  horseRaceCooldownMinutes: { type: Number, default: 2 },
+
   dailyReward: { type: Number, default: 100 },
   dailyStreakBonus: { type: Number, default: 50 },
   workMinReward: { type: Number, default: 25 },
@@ -25,7 +29,7 @@ const EconomyConfigSchema = new mongoose.Schema({
   maxBet: { type: Number, default: 100000 },
   minBet: { type: Number, default: 10 },
 
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
 });
 
 export const EconomyConfig = mongoose.model('EconomyConfig', EconomyConfigSchema);

@@ -1,70 +1,61 @@
 import { SlashCommandBuilder, MessageFlags } from 'discord.js';
-import { createEmbed, successEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { block, kv, formatNumber, header, getMedal } from '../../utils/embedDecorations.js';
 import { getGuildData, updateGuildData } from '../../utils/guildData.js';
 import { getLevelConfig, updateLevelConfig } from '../../utils/levelSystem.js';
 import { getWarnConfig, updateWarnConfig } from '../../utils/warns.js';
 import { getEconomyConfig, updateEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { GuildEconomy } from '../../models/GuildEconomy.js';
+import { emojis } from '../../utils/emojis.js';
 
 export default {
   CMD: new SlashCommandBuilder()
-    .setName('settings')
-    .setDescription('⚙️ Panel de control del dueño del bot')
+    .setName('owner-settings')
+    .setDescription('👑 Configuración de módulos (solo owner)')
     .setDMPermission(false)
     .addSubcommand(sub =>
       sub.setName('info')
-         .setDescription('📋 Ver información detallada del servidor actual')
+         .setDescription('📋 Ver información del servidor actual')
     )
     .addSubcommand(sub =>
       sub.setName('module')
-         .setDescription('🔧 Activar/desactivar módulos del bot en este servidor')
+         .setDescription('🔧 Activar/desactivar módulos')
          .addStringOption(opt =>
-           opt.setName('modulo')
-              .setDescription('Módulo a configurar')
-              .setRequired(true)
+           opt.setName('modulo').setDescription('Módulo').setRequired(true)
               .addChoices(
-                { name: '⭐ Niveles (XP por mensajes)', value: 'levels' },
+                { name: '⭐ Niveles', value: 'levels' },
                 { name: '🛡️ Warns automáticos', value: 'auto_warns' },
-                { name: '💰 Economía (comandos de dinero)', value: 'economy' }
+                { name: '💰 Economía', value: 'economy' }
               )
          )
          .addBooleanOption(opt =>
-           opt.setName('activar')
-              .setDescription('Activar o desactivar el módulo')
-              .setRequired(true)
+           opt.setName('activar').setDescription('Activar/desactivar').setRequired(true)
          )
     )
     .addSubcommand(sub =>
       sub.setName('clean')
-         .setDescription('🧹 Limpiar datos del servidor actual (mantiene configuración)')
+         .setDescription('🧹 Limpiar datos del servidor (mantiene config)')
          .addStringOption(opt =>
-           opt.setName('que')
-              .setDescription('Qué limpiar')
-              .setRequired(true)
+           opt.setName('que').setDescription('Qué limpiar').setRequired(true)
               .addChoices(
-                { name: '🗑️ Todos los datos de usuarios (niveles, warns y economía)', value: 'all_users' },
-                { name: '💰 Datos de economía (balances)', value: 'economy' },
-                { name: '⭐ Datos de niveles', value: 'levels' },
-                { name: '⚠️ Warns de usuarios', value: 'warns' }
+                { name: '🗑️ Todos los datos', value: 'all_users' },
+                { name: '💰 Economía', value: 'economy' },
+                { name: '⭐ Niveles', value: 'levels' },
+                { name: '⚠️ Warns', value: 'warns' }
               )
          )
          .addBooleanOption(opt =>
-           opt.setName('confirmar')
-              .setDescription('Escribe "true" para confirmar')
-              .setRequired(true)
+           opt.setName('confirmar').setDescription('Confirmar').setRequired(true)
          )
     )
     .addSubcommand(sub =>
-      sub.setName('stats')
-         .setDescription('📊 Ver estadísticas del servidor y el bot')
+      sub.setName('stats').setDescription('📊 Estadísticas del servidor')
     )
     .addSubcommand(sub =>
       sub.setName('language')
-         .setDescription('🌐 Cambiar el idioma del bot en este servidor')
+         .setDescription('🌐 Cambiar idioma del servidor')
          .addStringOption(opt =>
-           opt.setName('idioma')
-              .setDescription('Idioma')
-              .setRequired(true)
+           opt.setName('idioma').setDescription('Idioma').setRequired(true)
               .addChoices(
                 { name: '🇪🇸 Español', value: 'es' },
                 { name: '🇬🇧 English', value: 'en' }
@@ -78,7 +69,7 @@ export default {
   COOLDOWN: 3,
   GUILD_ONLY: true,
 
-  async execute(client, interaction, guildData, userData) {
+  async execute(client, interaction) {
     const sub = interaction.options.getSubcommand();
     const guild = interaction.guild;
 
@@ -96,39 +87,47 @@ export default {
       const guildLevelCount = await GuildLevel.countDocuments({ guildId: interaction.guildId });
       const warnCount = await Warn.countDocuments({ guildId: interaction.guildId });
 
+      const description = [
+        block([
+          kv('ID', `\`${guild.id}\``),
+          kv('Dueño', `<@${guild.ownerId}>`),
+          kv('Creado', `<t:${Math.floor(guild.createdTimestamp / 1000)}:F>`),
+          kv('Bot unido', `<t:${Math.floor(guild.joinedTimestamp / 1000)}:R>`),
+        ]),
+        '',
+        header('📊', 'Estadísticas'),
+        block([
+          kv('Miembros', `\`${formatNumber(guild.memberCount)}\``),
+          kv('Bots', `\`${formatNumber(guild.members.cache.filter(m => m.user.bot).size)}\``),
+          kv('Canales', `\`${formatNumber(guild.channels.cache.size)}\``),
+          kv('Roles', `\`${formatNumber(guild.roles.cache.size)}\``),
+        ]),
+        '',
+        header('🗄️', 'Datos en DB'),
+        block([
+          kv('Usuarios globales', `\`${formatNumber(userCount)}\``),
+          kv('Niveles en este server', `\`${formatNumber(guildLevelCount)}\``),
+          kv('Warns en este server', `\`${formatNumber(warnCount)}\``),
+        ]),
+        '',
+        header('⚙️', 'Módulos'),
+        block([
+          kv('⭐ Niveles', levelConfig?.enabled ? `${emojis.on}` : `${emojis.off}`),
+          kv('💰 Economía', economyConfig?.economyEnabled ? `${emojis.on}` : `${emojis.off}`),
+          kv('🛡️ Warns Auto', warnConfig.actions.length > 0 ? `${emojis.on} ${warnConfig.actions.length} reglas` : `${emojis.off}`),
+          kv('🌐 Idioma', `\`${guildDataFull?.language || 'es'}\``),
+        ]),
+      ].join('\n');
+
       const embed = createEmbed({
         color: COLORS.OWNER,
-        title: `📊 Panel de Control - ${guild.name}`,
+        title: `👑 Panel · ${guild.name}`,
         thumbnail: guild.iconURL({ dynamic: true, size: 256 }),
-        description: [
-          `**🔹 ID:** \`${guild.id}\``,
-          `**👑 Dueño:** <@${guild.ownerId}>`,
-          `**📅 Creado:** <t:${Math.floor(guild.createdTimestamp / 1000)}:F>`,
-          `**🤖 Bot unido:** <t:${Math.floor(guild.joinedTimestamp / 1000)}:R>`,
-          '',
-          `**📊 Estadísticas del Servidor**`,
-          `👥 **Miembros:** ${guild.memberCount}`,
-          `🤖 **Bots:** ${guild.members.cache.filter(m => m.user.bot).size}`,
-          `📢 **Canales:** ${guild.channels.cache.size}`,
-          `💬 **Roles:** ${guild.roles.cache.size}`,
-          '',
-          `**📊 Datos en Base de Datos**`,
-          `👤 **Usuarios totales (global):** ${userCount}`,
-          `⭐ **Niveles en este servidor:** ${guildLevelCount}`,
-          `⚠️ **Warns en este servidor:** ${warnCount}`,
-          '',
-          `**⚙️ Configuración**`,
-          `🌐 **Idioma:** \`${guildDataFull?.language || 'es'}\``,
-          '',
-          `**🔧 Módulos**`,
-          `⭐ **Niveles:** ${levelConfig?.enabled ? `${emojis.on}` : `${emojis.off}`}`,
-          `💰 **Economía:** ${economyConfig?.economyEnabled ? `${emojis.on}` : `${emojis.off}`}`,
-          `🛡️ **Warns Auto:** ${warnConfig.actions.length > 0 ? `${emojis.on} (${warnConfig.actions.length} reglas)` : `${emojis.off}`}`
-        ].join('\n'),
+        description,
         footer: {
-          text: `Usa /settings module para cambiar módulos`,
-          icon: client.user.displayAvatarURL()
-        }
+          text: 'Usa /owner-settings module para cambiar módulos',
+          icon: client.user.displayAvatarURL(),
+        },
       });
 
       return interaction.reply({ embeds: [embed] });
@@ -142,10 +141,13 @@ export default {
         case 'levels':
           await updateLevelConfig(interaction.guildId, { enabled: enable });
           return interaction.reply({
-            embeds: [successEmbed(
-              `⭐ **Niveles:** ${enable ? `${emojis.on}` : `${emojis.off}`}\n` +
-              (enable ? 'Los usuarios ganarán XP por mensajes.' : 'Los usuarios ya no ganarán XP por mensajes.')
-            )]
+            embeds: [createEmbed({
+              color: enable ? COLORS.SUCCESS : COLORS.WARNING,
+              title: enable ? '⭐ Niveles activados' : '⭐ Niveles desactivados',
+              description: enable
+                ? 'Los usuarios ganarán XP por mensajes.'
+                : 'Los usuarios ya no ganarán XP por mensajes.',
+            })],
           });
 
         case 'auto_warns': {
@@ -155,7 +157,7 @@ export default {
               warnConfig.actions = [
                 { warns: 3, action: 'timeout', duration: 10 },
                 { warns: 5, action: 'kick' },
-                { warns: 7, action: 'ban' }
+                { warns: 7, action: 'ban' },
               ];
               await updateWarnConfig(interaction.guildId, { actions: warnConfig.actions });
             }
@@ -163,26 +165,32 @@ export default {
             await updateWarnConfig(interaction.guildId, { actions: [] });
           }
           return interaction.reply({
-            embeds: [successEmbed(
-              `🛡️ **Warns Automáticos:** ${enable ? `${emojis.on}` : `${emojis.off}`}\n` +
-              (enable ? '3 warns = timeout, 5 warns = kick, 7 warns = ban' : 'Los warns ya no ejecutarán acciones automáticas.')
-            )]
+            embeds: [createEmbed({
+              color: enable ? COLORS.SUCCESS : COLORS.WARNING,
+              title: enable ? '🛡️ Warns auto activados' : '🛡️ Warns auto desactivados',
+              description: enable
+                ? '3 warns = timeout · 5 warns = kick · 7 warns = ban'
+                : 'Los warns ya no ejecutarán acciones automáticas.',
+            })],
           });
         }
 
         case 'economy':
           await updateEconomyConfig(interaction.guildId, { economyEnabled: enable });
           return interaction.reply({
-            embeds: [successEmbed(
-              `💰 **Economía:** ${enable ? `${emojis.on}` : `${emojis.off}`}\n` +
-              (enable ? 'Los comandos de economía están disponibles.' : 'Los comandos de economía están desactivados.')
-            )]
+            embeds: [createEmbed({
+              color: enable ? COLORS.SUCCESS : COLORS.WARNING,
+              title: enable ? '💰 Economía activada' : '💰 Economía desactivada',
+              description: enable
+                ? 'Los comandos de economía están disponibles.'
+                : 'Los comandos de economía están desactivados.',
+            })],
           });
 
         default:
           return interaction.reply({
             embeds: [errorEmbed('❌ Módulo no reconocido.')],
-            flags: MessageFlags.Ephemeral
+            flags: MessageFlags.Ephemeral,
           });
       }
     }
@@ -193,13 +201,12 @@ export default {
 
       if (!confirm) {
         return interaction.reply({
-          embeds: [errorEmbed('❌ Debes confirmar con `confirmar:true`')],
-          flags: MessageFlags.Ephemeral
+          embeds: [errorEmbed('Debes confirmar con `confirmar:true`.')],
+          flags: MessageFlags.Ephemeral,
         });
       }
 
-      let resultMessage = '';
-      const { User } = await import('../../models/User.js');
+      let description = '';
       const { GuildLevel } = await import('../../models/GuildLevel.js');
       const { Warn } = await import('../../models/Warn.js');
 
@@ -209,46 +216,47 @@ export default {
           const warnResult = await Warn.deleteMany({ guildId: interaction.guildId });
           const economyResult = await GuildEconomy.deleteMany({ guildId: interaction.guildId });
 
-          resultMessage =
-            `✅ **Datos limpiados en este servidor:**\n` +
-            `⭐ ${levelResult.deletedCount} niveles eliminados\n` +
-            `⚠️ ${warnResult.deletedCount} warns eliminados\n` +
-            `💰 ${economyResult.deletedCount} economías eliminadas\n\n` +
-            `🔒 **Solo se afectó a este servidor.** Los otros servidores no fueron tocados.`;
+          description = block([
+            kv('Niveles eliminados', `\`${formatNumber(levelResult.deletedCount)}\``),
+            kv('Warns eliminados', `\`${formatNumber(warnResult.deletedCount)}\``),
+            kv('Economías eliminadas', `\`${formatNumber(economyResult.deletedCount)}\``),
+          ]);
           break;
         }
-
         case 'economy': {
           const economyResult = await GuildEconomy.updateMany(
             { guildId: interaction.guildId },
             { balance: 500, bank: 0, upgrades: [], inventory: [] }
           );
-
-          resultMessage = `💰 **Economía reiniciada para ${economyResult.modifiedCount} usuarios** de este servidor.\nTodos tienen ahora 500 coins y banco vacío.`;
+          description = block([
+            kv('Usuarios afectados', `\`${formatNumber(economyResult.modifiedCount)}\``),
+            kv('Balance nuevo', '`500 coins`'),
+          ]);
           break;
         }
-
         case 'levels': {
           const levelResult = await GuildLevel.deleteMany({ guildId: interaction.guildId });
-          resultMessage = `⭐ **${levelResult.deletedCount} niveles eliminados** en este servidor.`;
+          description = block([kv('Niveles eliminados', `\`${formatNumber(levelResult.deletedCount)}\``)]);
           break;
         }
-
         case 'warns': {
           const warnResult = await Warn.deleteMany({ guildId: interaction.guildId });
-          resultMessage = `⚠️ **${warnResult.deletedCount} warns eliminados** en este servidor.`;
+          description = block([kv('Warns eliminados', `\`${formatNumber(warnResult.deletedCount)}\``)]);
           break;
         }
-
         default:
           return interaction.reply({
-            embeds: [errorEmbed('❌ Opción no reconocida.')],
-            flags: MessageFlags.Ephemeral
+            embeds: [errorEmbed('Opción no reconocida.')],
+            flags: MessageFlags.Ephemeral,
           });
       }
 
       return interaction.reply({
-        embeds: [successEmbed(resultMessage)]
+        embeds: [createEmbed({
+          color: COLORS.SUCCESS,
+          title: '🧹 Limpieza completada',
+          description,
+        })],
       });
     }
 
@@ -258,12 +266,10 @@ export default {
       const botCount = guild.members.cache.filter(m => m.user.bot).size;
       const humanCount = totalMembers - botCount;
 
-      const { User } = await import('../../models/User.js');
       const { GuildLevel } = await import('../../models/GuildLevel.js');
       const { Warn } = await import('../../models/Warn.js');
       const { Giveaway } = await import('../../models/Giveaway.js');
 
-      const userCount = await User.countDocuments();
       const guildLevelCount = await GuildLevel.countDocuments({ guildId: interaction.guildId });
       const warnCount = await Warn.countDocuments({ guildId: interaction.guildId });
       const giveawayCount = await Giveaway.countDocuments({ guildId: interaction.guildId, ended: false });
@@ -273,36 +279,41 @@ export default {
         .limit(5);
 
       const topLevelsText = topLevels.length > 0
-        ? topLevels.map((l, i) => `${i + 1}. <@${l.userId}> - Nivel ${l.level}`).join('\n')
-        : 'No hay datos de niveles';
+        ? topLevels.map((l, i) => `${getMedal(i)} <@${l.userId}> — Nv. \`${l.level}\``).join('\n')
+        : '`Sin datos`';
 
-      const embed = createEmbed({
-        color: COLORS.OWNER,
-        title: `📊 Estadísticas de ${guild.name}`,
-        thumbnail: guild.iconURL({ dynamic: true, size: 256 }),
-        description: [
-          `**👥 Miembros**`,
-          `🔹 **Total:** ${totalMembers}`,
-          `🔹 **Humanos:** ${humanCount}`,
-          `🔹 **Bots:** ${botCount}`,
-          `🔹 **En línea:** ${onlineMembers}`,
-          '',
-          `**📋 Datos del Bot**`,
-          `🔹 **Usuarios en DB:** ${userCount}`,
-          `🔹 **Niveles registrados:** ${guildLevelCount}`,
-          `🔹 **Warns:** ${warnCount}`,
-          `🔹 **Sorteos activos:** ${giveawayCount}`,
-          '',
-          `**🏆 Top 5 Niveles**`,
-          topLevelsText
-        ].join('\n'),
-        footer: {
-          text: `Actualizado: ${new Date().toLocaleString()}`,
-          icon: client.user.displayAvatarURL()
-        }
+      const description = [
+        header('👥', 'Miembros'),
+        block([
+          kv('Total', `\`${formatNumber(totalMembers)}\``),
+          kv('Humanos', `\`${formatNumber(humanCount)}\``),
+          kv('Bots', `\`${formatNumber(botCount)}\``),
+          kv('En línea', `\`${formatNumber(onlineMembers)}\``),
+        ]),
+        '',
+        header('📋', 'Datos del bot'),
+        block([
+          kv('Niveles', `\`${formatNumber(guildLevelCount)}\``),
+          kv('Warns', `\`${formatNumber(warnCount)}\``),
+          kv('Sorteos activos', `\`${formatNumber(giveawayCount)}\``),
+        ]),
+        '',
+        header('🏆', 'Top 5 niveles'),
+        topLevelsText,
+      ].join('\n');
+
+      return interaction.reply({
+        embeds: [createEmbed({
+          color: COLORS.OWNER,
+          title: `📊 ${guild.name}`,
+          thumbnail: guild.iconURL({ dynamic: true, size: 256 }),
+          description,
+          footer: {
+            text: `Actualizado: ${new Date().toLocaleString('es-ES')}`,
+            icon: client.user.displayAvatarURL(),
+          },
+        })],
       });
-
-      return interaction.reply({ embeds: [embed] });
     }
 
     if (sub === 'language') {
@@ -310,8 +321,12 @@ export default {
       await updateGuildData(interaction.guildId, { language: lang });
 
       return interaction.reply({
-        embeds: [successEmbed(`🌐 Idioma actualizado a: \`${lang === 'es' ? 'Español' : 'English'}\``)]
+        embeds: [createEmbed({
+          color: COLORS.SUCCESS,
+          title: '🌐 Idioma actualizado',
+          description: block([kv('Nuevo idioma', `\`${lang === 'es' ? 'Español' : 'English'}\``)]),
+        })],
       });
     }
-  }
+  },
 };
