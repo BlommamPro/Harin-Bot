@@ -21,9 +21,16 @@ export const config = {
   cooldownColor: COLORS.WARNING,
 
   status: process.env.STATUS || "online",
+
   activity: {
-    type: process.env.ACTIVITY_TYPE || "Playing",
-    name: process.env.ACTIVITY_NAME || "EstrellaStudios ⭐",
+    rotate: true,
+    intervalMs: 20 * 60_000,
+    list: [
+      { type: "Playing",   name: "EstrellaStudios ⭐" },
+      { type: "Playing",   name: "/help" },
+      { type: "Watching",  name: "{servers} servidores" },
+      { type: 'Competing', name: '𝓗𝓪𝓻𝓲𝓷 𝓑𝓸𝓽' },
+    ],
   },
 
   supportChannelId: process.env.SUPPORT_CHANNEL_ID || null,

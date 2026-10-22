@@ -1,21 +1,16 @@
-import { ActivityType } from 'discord.js';
 import { config } from '../../../config/config.js';
 import { logger } from '../../utils/logger.js';
 import { startGiveawayChecker } from '../../utils/giveawayHandler.js';
 import { setSupportChannel } from '../../utils/anticrash.js';
-import { setSupportChannelForErrors } from '../../events/interaction/interactionCreate.js';
+import { setSupportChannelForErrors } from '../interaction/interactionCreate.js';
+import { startStatusRotation } from '../../utils/statusRotator.js';
 
 export default {
   name: 'clientReady',
   once: true,
 
   async execute(client) {
-    const activityType = ActivityType[config.activity.type] || ActivityType.Playing;
-
-    client.user.setPresence({
-      activities: [{ name: config.activity.name, type: activityType }],
-      status: config.status
-    });
+    startStatusRotation(client);
 
     logger.success(`${client.user.tag} está online en ${client.guilds.cache.size} servidores`);
     logger.info(`📊 ${client.users.cache.size} usuarios | ${client.channels.cache.size} canales`);
@@ -34,5 +29,5 @@ export default {
         logger.warn('No pude obtener el canal de soporte:', err.message);
       }
     }
-  }
+  },
 };
