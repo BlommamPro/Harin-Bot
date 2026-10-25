@@ -9,11 +9,9 @@ const DEFAULTS = {
   slotsCooldownSeconds: 15,
   blackjackCooldownSeconds: 10,
   payCooldownMinutes: 1,
-
   fishCooldownMinutes: 5,
   mineCooldownMinutes: 8,
   horseRaceCooldownMinutes: 2,
-
   dailyReward: 100,
   dailyStreakBonus: 50,
   workMinReward: 25,
@@ -23,7 +21,7 @@ const DEFAULTS = {
   currencyName: 'coins',
   currencyEmoji: '💰',
   maxBet: 100000,
-  minBet: 10
+  minBet: 10,
 };
 
 export async function getEconomyConfig(guildId) {
@@ -44,10 +42,7 @@ export async function updateEconomyConfig(guildId, update) {
 
 export async function getEconomyValues(guildId) {
   const config = await getEconomyConfig(guildId);
-  return {
-    ...DEFAULTS,
-    ...config.toObject()
-  };
+  return { ...DEFAULTS, ...config.toObject() };
 }
 
 export { DEFAULTS };

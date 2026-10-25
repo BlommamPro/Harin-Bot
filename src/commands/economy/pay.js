@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
@@ -69,12 +69,7 @@ export default {
       kv('Tu balance', `\`${formatNumber(economy.balance - amount)} coins\``),
     ]);
 
-    const embed = createEmbed({
-      color: COLORS.SUCCESS,
-      title: '💸 Transferencia completada',
-      description,
-    });
-
+    const embed = successEmbed(description);
     return interaction.editReply({ embeds: [embed] });
   },
 };

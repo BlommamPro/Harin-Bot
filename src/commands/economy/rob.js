@@ -4,7 +4,7 @@ import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
 import { checkAchievements } from '../../utils/achievements.js';
-import { applyRobSkill, applyPetBonus } from '../../utils/applyUpgrades.js';
+import { applyRobSkill, applyPetBonus, applyInsurance } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
@@ -100,7 +100,8 @@ export default {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    const fine = Math.floor((economy.balance || 0) * 0.05);
+    const baseFine = Math.floor((economy.balance || 0) * 0.05);
+    const fine = applyInsurance(baseFine, economy.upgrades);
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -fine } });
     await setDbCooldown(interaction.user.id, `rob_${interaction.guildId}`);

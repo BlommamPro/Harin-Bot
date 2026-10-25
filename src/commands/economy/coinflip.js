@@ -3,7 +3,7 @@ import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { checkDbCooldown, setDbCooldown } from '../../utils/economyCooldowns.js';
-import { applyBetLuck } from '../../utils/applyUpgrades.js';
+import { applyBetLuck, applyLuckyCharm } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
@@ -38,7 +38,6 @@ export default {
 
     const amount = interaction.options.getInteger('cantidad');
     const side = interaction.options.getString('lado');
-
     const config = await getEconomyConfig(interaction.guildId);
 
     if (amount < config.minBet) {
@@ -62,24 +61,38 @@ export default {
     }
 
     const result = Math.random() < 0.5 ? 'cara' : 'cruz';
-    const won = result === side;
+    const wonNaturally = result === side;
+
+    let won = wonNaturally;
+    let luckySave = false;
+
+    if (!wonNaturally) {
+      const charmChance = applyLuckyCharm(0, economy.upgrades);
+      if (Math.random() < charmChance) {
+        won = true;
+        luckySave = true;
+      }
+    }
 
     await setDbCooldown(interaction.user.id, `coinflip_${interaction.guildId}`);
 
     if (won) {
-      const winnings = applyBetLuck(amount, economy.upgrades);
+      const winnings = luckySave ? amount : applyBetLuck(amount, economy.upgrades);
       await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: winnings } });
-      await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, winnings);
+      await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, winnings - amount);
 
-      const description = block([
-        kv('Resultado', `**${result.toUpperCase()}**`),
-        kv('Tu elección', `**${side.toUpperCase()}**`),
-        kv('Ganancia', `\`${formatNumber(winnings)} coins\``),
-      ]);
+      const description = [
+        block([
+          kv('Resultado', `**${result.toUpperCase()}**`),
+          kv('Tu elección', `**${side.toUpperCase()}**`),
+          kv('Ganancia', `\`${formatNumber(winnings - amount)} coins\``),
+        ]),
+        luckySave ? '\n-# 🍀 Tu amuleto te salvó de perder' : '',
+      ].filter(Boolean).join('\n');
 
       const embed = createEmbed({
         color: COLORS.SUCCESS,
-        title: `🪙 ¡Ganaste! Cayó ${result.toUpperCase()}`,
+        title: luckySave ? `🪙 ¡Empate salvado! Cayó ${result.toUpperCase()}` : `🪙 ¡Ganaste! Cayó ${result.toUpperCase()}`,
         description,
       });
 

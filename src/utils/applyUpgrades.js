@@ -1,10 +1,16 @@
 import { getUpgradeEffect } from './economyConfig.js';
 
+function globalMultiplier(upgrades) {
+  return 1
+    + getUpgradeEffect(upgrades, 'pet')
+    + getUpgradeEffect(upgrades, 'golden_touch');
+}
+
 export function applyWorkBonus(baseAmount, upgrades) {
   const jobBonus = getUpgradeEffect(upgrades, 'better_job');
-  const petBonus = getUpgradeEffect(upgrades, 'pet');
-  const totalBonus = jobBonus + petBonus;
-  return Math.floor(baseAmount * (1 + totalBonus));
+  const businessBonus = getUpgradeEffect(upgrades, 'business');
+  const total = globalMultiplier(upgrades) + jobBonus + businessBonus;
+  return Math.floor(baseAmount * total);
 }
 
 export function applyCrimeLuck(baseChance, upgrades) {
@@ -21,40 +27,28 @@ export function applyRobSkill(baseChance, upgrades) {
 
 export function applyBetLuck(baseWinnings, upgrades) {
   const betBonus = getUpgradeEffect(upgrades, 'bet_luck');
-  const petBonus = getUpgradeEffect(upgrades, 'pet');
-  const totalBonus = betBonus + petBonus;
-  return Math.floor(baseWinnings * (1 + totalBonus));
+  const total = globalMultiplier(upgrades) + betBonus;
+  return Math.floor(baseWinnings * total);
 }
 
 export function applyDailyBonus(baseAmount, upgrades) {
   const dailyBonus = getUpgradeEffect(upgrades, 'daily_boost');
-  const petBonus = getUpgradeEffect(upgrades, 'pet');
-  return Math.floor((baseAmount + dailyBonus) * (1 + petBonus));
+  const richFriend = getUpgradeEffect(upgrades, 'rich_friend');
+  const baseWithDaily = baseAmount + dailyBonus;
+  const total = globalMultiplier(upgrades) + richFriend;
+  return Math.floor(baseWithDaily * total);
 }
 
 export function applyPetBonus(amount, upgrades) {
-  const petBonus = getUpgradeEffect(upgrades, 'pet');
-  return Math.floor(amount * (1 + petBonus));
+  return Math.floor(amount * globalMultiplier(upgrades));
 }
 
-export function applyCooldownReduction(baseMinutes, upgrades) {
-  const reduction = getUpgradeEffect(upgrades, 'hourglass');
-  if (reduction === 0) return baseMinutes;
-  return Math.max(baseMinutes * (1 - reduction), 0.1);
+export function applyLuckyCharm(baseChance, upgrades) {
+  const luckyBonus = getUpgradeEffect(upgrades, 'lucky_charm');
+  return Math.min(baseChance + luckyBonus, 0.95);
 }
 
-export function calculatePassiveIncome(upgrades, lastCollect) {
-  const house = getUpgradeEffect(upgrades, 'house');
-  const mine = getUpgradeEffect(upgrades, 'mine');
-  const perHour = house + mine;
-  if (perHour === 0) return 0;
-
-  const now = Date.now();
-  const last = new Date(lastCollect).getTime();
-  const hoursPassed = (now - last) / (1000 * 60 * 60);
-
-  if (hoursPassed < 1) return 0;
-
-  const fullHours = Math.floor(hoursPassed);
-  return perHour * fullHours;
+export function applyInsurance(penalty, upgrades) {
+  const insurance = getUpgradeEffect(upgrades, 'insurance');
+  return Math.floor(penalty * (1 - insurance));
 }

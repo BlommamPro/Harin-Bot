@@ -1,12 +1,12 @@
 import { SlashCommandBuilder } from 'discord.js';
-import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
+import { successEmbed, errorEmbed } from '../../utils/embeds.js';
 import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 import { getGuildEconomy, updateGuildEconomy } from '../../utils/guildData.js';
 import { getGuildLevel } from '../../utils/levelSystem.js';
 import { getUpgradeEffect } from '../../utils/economyConfig.js';
 
 function getBankCapacity(level, upgrades) {
-  const base = level * 5000;
+  const base = level * 500;
   const multiplier = getUpgradeEffect(upgrades, 'better_bank');
   return multiplier > 0 ? Math.floor(base * multiplier) : base;
 }
@@ -31,7 +31,6 @@ export default {
 
     const input = interaction.options.getString('cantidad').toLowerCase().trim();
     const economy = await getGuildEconomy(interaction.guildId, interaction.user.id, interaction.user.username);
-
     const guildLevelData = await getGuildLevel(interaction.guildId, interaction.user.id);
     const userLevel = guildLevelData.level || 1;
 
@@ -83,12 +82,7 @@ export default {
       kv('Total', `\`${formatNumber(newWallet + newBank)} coins\``),
     ]);
 
-    const embed = createEmbed({
-      color: COLORS.SUCCESS,
-      title: '🏦 Depósito exitoso',
-      description,
-    });
-
+    const embed = successEmbed(description);
     return interaction.editReply({ embeds: [embed] });
   },
 };

@@ -30,10 +30,6 @@ export default {
       color: COLORS.INFO,
       title: '🏓 Pong',
       description,
-      footer: {
-        text: `Solicitado por ${interaction.user.username}`,
-        icon: interaction.user.displayAvatarURL(),
-      },
     });
 
     await interaction.editReply({ content: null, embeds: [embed] });

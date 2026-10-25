@@ -179,8 +179,7 @@ export default {
           kv('Tu mano', `${formatHand(playerHand)} **(${handValue(playerHand)})**`),
           kv('Dealer', formatHand(dealerHand, true)),
         ]),
-        '',
-        status || '-# Elige una acción con los botones de abajo.',
+        status ? `\n${status}` : '-# Elige una acción con los botones de abajo.',
       ].join('\n');
 
       return createEmbed({ title: '🃏 Blackjack', color: COLORS.ECONOMY, description });
@@ -188,45 +187,22 @@ export default {
 
     const generateButtons = (canDouble = true) => {
       const row = new ActionRowBuilder();
-
       row.addComponents(
-        new ButtonBuilder()
-          .setCustomId(`bj_hit_${interaction.user.id}_${gameId}`)
-          .setLabel('Pedir carta')
-          .setEmoji('🃏')
-          .setStyle(ButtonStyle.Primary),
-        new ButtonBuilder()
-          .setCustomId(`bj_stand_${interaction.user.id}_${gameId}`)
-          .setLabel('Plantarse')
-          .setEmoji('🛑')
-          .setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId(`bj_hit_${interaction.user.id}_${gameId}`).setLabel('Pedir carta').setEmoji('🃏').setStyle(ButtonStyle.Primary),
+        new ButtonBuilder().setCustomId(`bj_stand_${interaction.user.id}_${gameId}`).setLabel('Plantarse').setEmoji('🛑').setStyle(ButtonStyle.Success),
       );
-
       if (canDouble && !doubled && remainingBalance >= amount) {
         row.addComponents(
-          new ButtonBuilder()
-            .setCustomId(`bj_double_${interaction.user.id}_${gameId}`)
-            .setLabel('Doblar')
-            .setEmoji('💥')
-            .setStyle(ButtonStyle.Danger),
+          new ButtonBuilder().setCustomId(`bj_double_${interaction.user.id}_${gameId}`).setLabel('Doblar').setEmoji('💥').setStyle(ButtonStyle.Danger),
         );
       }
-
       row.addComponents(
-        new ButtonBuilder()
-          .setCustomId(`bj_surrender_${interaction.user.id}_${gameId}`)
-          .setLabel('Retirarse')
-          .setEmoji('🏳️')
-          .setStyle(ButtonStyle.Secondary),
+        new ButtonBuilder().setCustomId(`bj_surrender_${interaction.user.id}_${gameId}`).setLabel('Retirarse').setEmoji('🏳️').setStyle(ButtonStyle.Secondary),
       );
-
       return row;
     };
 
-    const msg = await interaction.editReply({
-      embeds: [generateEmbed()],
-      components: [generateButtons(true)],
-    });
+    const msg = await interaction.editReply({ embeds: [generateEmbed()], components: [generateButtons(true)] });
 
     const collector = msg.createMessageComponentCollector({
       componentType: ComponentType.Button,

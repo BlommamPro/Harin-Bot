@@ -10,7 +10,6 @@ export const UPGRADES = {
       { level: 4, cost: 100000, effect: 1.00 }
     ]
   },
-
   better_bank: {
     name: '🏦 Banco Mejorado',
     description: 'Aumenta la capacidad del banco',
@@ -21,7 +20,6 @@ export const UPGRADES = {
       { level: 3, cost: 50000, effect: 10 }
     ]
   },
-
   crime_luck: {
     name: '🍀 Suerte Criminal',
     description: 'Aumenta el éxito en /crime',
@@ -32,7 +30,6 @@ export const UPGRADES = {
       { level: 3, cost: 50000, effect: 0.20 }
     ]
   },
-
   rob_skill: {
     name: '🥷 Habilidad de Ladrón',
     description: 'Aumenta el éxito en /rob',
@@ -43,10 +40,9 @@ export const UPGRADES = {
       { level: 3, cost: 50000, effect: 0.20 }
     ]
   },
-
   bet_luck: {
     name: '🎰 Suerte en Apuestas',
-    description: 'Aumenta las ganancias en /slots',
+    description: 'Aumenta las ganancias en apuestas',
     maxLevel: 3,
     levels: [
       { level: 1, cost: 3000,  effect: 0.05 },
@@ -54,30 +50,6 @@ export const UPGRADES = {
       { level: 3, cost: 75000, effect: 0.20 }
     ]
   },
-
-  house: {
-    name: '🏠 Casa',
-    description: 'Ingreso pasivo por hora',
-    maxLevel: 4,
-    levels: [
-      { level: 1, cost: 5000,   effect: 10 },
-      { level: 2, cost: 25000,  effect: 25 },
-      { level: 3, cost: 100000, effect: 50 },
-      { level: 4, cost: 500000, effect: 100 }
-    ]
-  },
-
-  mine: {
-    name: '⛏️ Mina',
-    description: 'Ingreso pasivo por hora',
-    maxLevel: 3,
-    levels: [
-      { level: 1, cost: 10000,  effect: 20 },
-      { level: 2, cost: 50000,  effect: 50 },
-      { level: 3, cost: 200000, effect: 100 }
-    ]
-  },
-
   pet: {
     name: '🐾 Mascota',
     description: 'Aumenta TODAS las ganancias',
@@ -88,10 +60,29 @@ export const UPGRADES = {
       { level: 3, cost: 250000, effect: 0.20 }
     ]
   },
-
-  hourglass: {
-    name: '⏱️ Reloj de Arena',
-    description: 'Reduce los cooldowns',
+  daily_boost: {
+    name: '🎁 Multiplicador de Daily',
+    description: 'Aumenta la recompensa de /daily (+coins fijos)',
+    maxLevel: 3,
+    levels: [
+      { level: 1, cost: 3000,  effect: 50 },
+      { level: 2, cost: 15000, effect: 150 },
+      { level: 3, cost: 75000, effect: 500 }
+    ]
+  },
+  lucky_charm: {
+    name: '🍀 Amuleto de la Suerte',
+    description: 'Chance de recuperar la apuesta en /coinflip y /horse-race',
+    maxLevel: 3,
+    levels: [
+      { level: 1, cost: 5000,   effect: 0.05 },
+      { level: 2, cost: 25000,  effect: 0.10 },
+      { level: 3, cost: 100000, effect: 0.20 }
+    ]
+  },
+  rich_friend: {
+    name: '🤝 Amigo Rico',
+    description: 'Aumenta la recompensa de /daily (%)',
     maxLevel: 3,
     levels: [
       { level: 1, cost: 5000,   effect: 0.10 },
@@ -99,15 +90,34 @@ export const UPGRADES = {
       { level: 3, cost: 100000, effect: 0.50 }
     ]
   },
-
-  daily_boost: {
-    name: '🎁 Multiplicador de Daily',
-    description: 'Aumenta la recompensa de /daily',
+  business: {
+    name: '🏢 Negocio',
+    description: 'Aumenta las ganancias de /work',
     maxLevel: 3,
     levels: [
-      { level: 1, cost: 3000,  effect: 50 },
-      { level: 2, cost: 15000, effect: 150 },
-      { level: 3, cost: 75000, effect: 500 }
+      { level: 1, cost: 5000,   effect: 0.20 },
+      { level: 2, cost: 25000,  effect: 0.50 },
+      { level: 3, cost: 100000, effect: 1.00 }
+    ]
+  },
+  insurance: {
+    name: '🛡️ Seguro',
+    description: 'Reduce la multa en /crime y /rob',
+    maxLevel: 3,
+    levels: [
+      { level: 1, cost: 5000,   effect: 0.20 },
+      { level: 2, cost: 25000,  effect: 0.40 },
+      { level: 3, cost: 100000, effect: 0.60 }
+    ]
+  },
+  golden_touch: {
+    name: '✨ Toque Dorado',
+    description: 'Aumenta TODAS las ganancias (acumulable con pet)',
+    maxLevel: 3,
+    levels: [
+      { level: 1, cost: 20000,  effect: 0.02 },
+      { level: 2, cost: 100000, effect: 0.05 },
+      { level: 3, cost: 500000, effect: 0.10 }
     ]
   }
 };
@@ -181,10 +191,8 @@ export const ACHIEVEMENTS = {
 export function getUpgradeEffect(upgrades, upgradeId) {
   const upgrade = upgrades?.find(u => u.upgradeId === upgradeId);
   if (!upgrade || upgrade.level === 0) return 0;
-
   const config = UPGRADES[upgradeId];
   if (!config) return 0;
-
   const levelConfig = config.levels.find(l => l.level === upgrade.level);
   return levelConfig ? levelConfig.effect : 0;
 }
@@ -197,10 +205,8 @@ export function getUpgradeLevel(upgrades, upgradeId) {
 export function getUpgradeCost(upgrades, upgradeId) {
   const config = UPGRADES[upgradeId];
   if (!config) return null;
-
   const currentLevel = getUpgradeLevel(upgrades, upgradeId);
   if (currentLevel >= config.maxLevel) return null;
-
   const nextLevel = currentLevel + 1;
   const levelConfig = config.levels.find(l => l.level === nextLevel);
   return levelConfig?.cost || null;

@@ -103,7 +103,6 @@ export default {
     }
 
     embed.setFooter({ text: `Siguiente trabajo en ${config.workCooldownMinutes} min` });
-
     return interaction.editReply({ embeds: [embed] });
   },
 };

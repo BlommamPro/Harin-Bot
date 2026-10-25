@@ -11,7 +11,7 @@ import {
   isGuildBusy, setGuildCooldown, clearGuildCooldown,
 } from '../../utils/horseRaceHandler.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
-import { applyBetLuck } from '../../utils/applyUpgrades.js';
+import { applyBetLuck, applyLuckyCharm } from '../../utils/applyUpgrades.js';
 import { logger } from '../../utils/logger.js';
 
 const JOIN_TIME_HUMAN = 60000;
@@ -243,8 +243,18 @@ export async function runRace(client, message, raceId) {
       }
     } else {
       losers.push({ userId, player });
+
       if (!player.isBot) {
-        humanResults.push({ userId, player, horse, won: false, profit: -player.bet });
+        const econ = await getGuildEconomy(race.guildId, userId);
+        const charmChance = applyLuckyCharm(0, econ.upgrades);
+        const luckySave = Math.random() < charmChance;
+
+        if (luckySave) {
+          await updateGuildEconomy(race.guildId, userId, { $inc: { balance: player.bet } });
+          humanResults.push({ userId, player, horse, won: true, profit: 0, luckySave: true });
+        } else {
+          humanResults.push({ userId, player, horse, won: false, profit: -player.bet });
+        }
       }
     }
   }
@@ -266,6 +276,9 @@ export async function runRace(client, message, raceId) {
 
   const yourResult = humanResults.length > 0
     ? humanResults.map(r => {
+        if (r.luckySave) {
+          return `> ${r.horse.emoji} **${r.horse.name}** → 🍀 **Amuleto salvó tu apuesta** \`+0\` coins`;
+        }
         return `> ${r.horse.emoji} **${r.horse.name}** → ${r.won ? '✅ **Ganaste**' : '❌ **Perdiste**'} \`${r.profit >= 0 ? '+' : ''}${formatNumber(r.profit)}\` coins`;
       }).join('\n')
     : '> `Nadie`';

@@ -67,13 +67,11 @@ export default {
     const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
     const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
-    const description = [
-      block([
-        kv('Recompensa', `\`${formatNumber(totalReward)} coins\``),
-        newStreak > 1 ? kv('Racha', `\`${newStreak} días\` (+${formatNumber(streakBonus)} bonus)`) : null,
-        kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-      ].filter(Boolean)),
-    ].join('\n');
+    const description = block([
+      kv('Recompensa', `\`${formatNumber(totalReward)} coins\``),
+      newStreak > 1 ? kv('Racha', `\`${newStreak} días\` (+${formatNumber(streakBonus)} bonus)`) : null,
+      kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
+    ].filter(Boolean));
 
     const embed = createEmbed({
       color: COLORS.SUCCESS,
@@ -89,7 +87,6 @@ export default {
     }
 
     embed.setFooter({ text: `Siguiente daily en ${Math.floor(config.dailyCooldownMinutes / 60)}h` });
-
     return interaction.editReply({ embeds: [embed] });
   },
 };

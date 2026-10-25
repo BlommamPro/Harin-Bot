@@ -6,7 +6,7 @@ import { getGuildLevel } from '../../utils/levelSystem.js';
 import { getUpgradeEffect } from '../../utils/economyConfig.js';
 
 function getBankCapacity(level, upgrades) {
-  const base = level * 5000;
+  const base = level * 500;
   const multiplier = getUpgradeEffect(upgrades, 'better_bank');
   return multiplier > 0 ? Math.floor(base * multiplier) : base;
 }
@@ -17,9 +17,7 @@ export default {
     .setDescription('Muestra tu balance bancario y en mano')
     .setDMPermission(false)
     .addUserOption(opt =>
-      opt.setName('usuario')
-         .setDescription('Usuario a consultar (opcional)')
-         .setRequired(false)
+      opt.setName('usuario').setDescription('Usuario a consultar (opcional)').setRequired(false)
     ),
 
   PERMISSIONS: [],
@@ -40,7 +38,6 @@ export default {
     const bank = data?.bank || 0;
     const total = wallet + bank;
     const maxCapacity = getBankCapacity(level, data.upgrades);
-
     const bar = createProgressBar(bank, maxCapacity, 14);
     const pct = maxCapacity > 0 ? Math.round((bank / maxCapacity) * 100) : 0;
 
