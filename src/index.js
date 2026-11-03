@@ -8,6 +8,7 @@ import { logger } from "./utils/logger.js";
 import { setupProcessHandlers } from "./utils/anticrash.js";
 import { setupDBShutdown } from './utils/database.js';
 import { cleanupExpiredEvents, refreshActiveEvents } from "./utils/eventManager.js";
+import { sweepOldGames } from "./utils/blackjackStore.js";
 
 const client = new Client({
   intents: [
@@ -56,6 +57,14 @@ async function start() {
     cleanupExpiredEvents().catch(err =>
       logger.warn('Error en limpieza periódica de eventos:', err.message)
     );
+  }, 5 * 60_000);
+
+  setInterval(() => {
+    try {
+      sweepOldGames(20 * 60 * 1000);
+    } catch (err) {
+      logger.warn('Error en limpieza periódica de partidas de blackjack:', err.message);
+    }
   }, 5 * 60_000);
 
   await loadEvents(client);

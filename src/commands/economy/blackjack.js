@@ -4,7 +4,6 @@ import {
   ButtonBuilder,
   ButtonStyle,
   MessageFlags,
-  ComponentType,
 } from 'discord.js';
 import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
@@ -16,17 +15,18 @@ import { checkAchievements } from '../../utils/achievements.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
 import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
+import { createGame, deleteGame, getGame } from '../../utils/blackjackStore.js';
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 
-function createDeck() {
+export function createDeck() {
   const deck = [];
   for (const suit of SUITS) for (const rank of RANKS) deck.push({ suit, rank });
   return deck;
 }
 
-function shuffle(deck) {
+export function shuffle(deck) {
   for (let i = deck.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [deck[i], deck[j]] = [deck[j], deck[i]];
@@ -34,13 +34,13 @@ function shuffle(deck) {
   return deck;
 }
 
-function cardValue(card) {
+export function cardValue(card) {
   if (['J', 'Q', 'K'].includes(card.rank)) return 10;
   if (card.rank === 'A') return 11;
   return parseInt(card.rank);
 }
 
-function handValue(hand) {
+export function handValue(hand) {
   let value = 0;
   let aces = 0;
   for (const card of hand) {
@@ -54,17 +54,147 @@ function handValue(hand) {
   return value;
 }
 
-function formatCard(card) {
+export function formatCard(card) {
   return `${card.suit}${card.rank}`;
 }
 
-function formatHand(hand, hideFirst = false) {
+export function formatHand(hand, hideFirst = false) {
   if (hideFirst) return `🎴 ${hand.slice(1).map(formatCard).join(' ')}`;
   return hand.map(formatCard).join(' ');
 }
 
-function isBlackjack(hand) {
+export function isBlackjack(hand) {
   return hand.length === 2 && handValue(hand) === 21;
+}
+
+export function buildGameButtons(userId, gameId, { canDouble = true, doubled = false, remainingBalance = 0, amount = 0 } = {}) {
+  const row = new ActionRowBuilder();
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`bj_hit_${userId}_${gameId}`)
+      .setLabel('Pedir carta')
+      .setEmoji('🃏')
+      .setStyle(ButtonStyle.Primary),
+    new ButtonBuilder()
+      .setCustomId(`bj_stand_${userId}_${gameId}`)
+      .setLabel('Plantarse')
+      .setEmoji('🛑')
+      .setStyle(ButtonStyle.Success),
+  );
+  if (canDouble && !doubled && remainingBalance >= amount) {
+    row.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`bj_double_${userId}_${gameId}`)
+        .setLabel('Doblar')
+        .setEmoji('💥')
+        .setStyle(ButtonStyle.Danger),
+    );
+  }
+  row.addComponents(
+    new ButtonBuilder()
+      .setCustomId(`bj_surrender_${userId}_${gameId}`)
+      .setLabel('Retirarse')
+      .setEmoji('🏳️')
+      .setStyle(ButtonStyle.Secondary),
+  );
+  return row;
+}
+
+export function buildGameEmbed(game, status = '') {
+  const description = [
+    block([
+      kv('Apuesta', `\`${formatNumber(game.currentBet)} coins\``),
+      kv('Tu mano', `${formatHand(game.playerHand)} **(${handValue(game.playerHand)})**`),
+      kv('Dealer', formatHand(game.dealerHand, true)),
+    ]),
+    status ? `\n${status}` : '-# Elige una acción con los botones de abajo.',
+  ].join('\n');
+
+  return createEmbed({ title: '🃏 Blackjack', color: COLORS.ECONOMY, description });
+}
+
+export async function resolveDealer(game, interaction) {
+  const { playerHand, dealerHand, deck, currentBet, guildId, userId, economy, coinsMultiplier } = game;
+
+  while (handValue(dealerHand) < 17) dealerHand.push(deck.pop());
+
+  const pVal = handValue(playerHand);
+  const dVal = handValue(dealerHand);
+
+  let winAmount = 0;
+  let status = '';
+  let color = COLORS.ERROR;
+
+  if (dVal > 21) {
+    const base = currentBet * 2;
+    const withLuck = applyBetLuck(base, economy.upgrades);
+    winAmount = applyEventMultiplier(withLuck, coinsMultiplier);
+    status = `**El dealer se pasó (${dVal}).** Ganaste \`${formatNumber(winAmount - currentBet)}\` coins.`;
+    color = COLORS.SUCCESS;
+  } else if (pVal > dVal) {
+    const base = currentBet * 2;
+    const withLuck = applyBetLuck(base, economy.upgrades);
+    winAmount = applyEventMultiplier(withLuck, coinsMultiplier);
+    status = `**Ganaste** (${pVal} vs ${dVal}). Recibes \`${formatNumber(winAmount - currentBet)}\` coins.`;
+    color = COLORS.SUCCESS;
+  } else if (pVal === dVal) {
+    winAmount = currentBet;
+    status = `**Empate** (${pVal} vs ${dVal}). Recuperas \`${formatNumber(currentBet)}\` coins.`;
+    color = COLORS.WARNING;
+  } else {
+    status = `**Perdiste** (${pVal} vs ${dVal}). Pierdes \`${formatNumber(currentBet)}\` coins.`;
+    color = COLORS.ERROR;
+  }
+
+  if (winAmount > 0) {
+    await updateGuildEconomy(guildId, userId, { $inc: { balance: winAmount } });
+    const netWin = winAmount - currentBet;
+    if (netWin > 0) {
+      await addWeeklyCoins(guildId, userId, interaction.user.username, netWin);
+    }
+  }
+
+  const description = [
+    block([
+      kv('Tu mano', `${formatHand(playerHand)} **(${pVal})**`),
+      kv('Dealer', `${formatHand(dealerHand)} **(${dVal})**`),
+    ]),
+    '',
+    status,
+  ].join('\n');
+
+  const embed = createEmbed({ title: '🃏 Blackjack', color, description });
+
+  if (game.timeoutHandle) clearTimeout(game.timeoutHandle);
+  deleteGame(game.gameId);
+
+  await interaction.update({ embeds: [embed], components: [] });
+
+  if (winAmount > currentBet) {
+    await updateGuildEconomy(guildId, userId, { $inc: { blackjackWins: 1 } });
+    const updatedEconomy = await getGuildEconomy(guildId, userId);
+    await checkAchievements(guildId, userId, updatedEconomy);
+  }
+}
+
+export async function endGame(game, interaction, status, color = COLORS.ERROR) {
+  if (game.timeoutHandle) clearTimeout(game.timeoutHandle);
+  deleteGame(game.gameId);
+
+  const pVal = handValue(game.playerHand);
+  const dVal = handValue(game.dealerHand);
+
+  const description = [
+    block([
+      kv('Tu mano', `${formatHand(game.playerHand)} **(${pVal})**`),
+      kv('Dealer', `${formatHand(game.dealerHand)} **(${dVal})**`),
+    ]),
+    '',
+    status,
+  ].join('\n');
+
+  const embed = createEmbed({ title: '🃏 Blackjack', color, description });
+  await interaction.update({ embeds: [embed], components: [] });
 }
 
 export default {
@@ -121,10 +251,9 @@ export default {
 
     const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
 
-    let deck = shuffle(createDeck());
+    const deck = shuffle(createDeck());
     const playerHand = [deck.pop(), deck.pop()];
     const dealerHand = [deck.pop(), deck.pop()];
-    const playerValue = handValue(playerHand);
 
     if (isBlackjack(playerHand)) {
       let resultText = '';
@@ -159,7 +288,7 @@ export default {
     if (isBlackjack(dealerHand)) {
       const description = [
         block([
-          kv('Tu mano', `${formatHand(playerHand)} **(${playerValue})**`),
+          kv('Tu mano', `${formatHand(playerHand)} **(${handValue(playerHand)})**`),
           kv('Dealer', `${formatHand(dealerHand)} **(21)**`),
         ]),
         '',
@@ -170,204 +299,58 @@ export default {
       return interaction.editReply({ embeds: [embed] });
     }
 
-    const gameId = Date.now().toString(36);
-    let currentBet = amount;
-    let doubled = false;
-    let gameOver = false;
-    let resolved = false;
+    const gameId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
-    const generateEmbed = (status = '') => {
-      const description = [
-        block([
-          kv('Apuesta', `\`${formatNumber(currentBet)} coins\``),
-          kv('Tu mano', `${formatHand(playerHand)} **(${handValue(playerHand)})**`),
-          kv('Dealer', formatHand(dealerHand, true)),
-        ]),
-        status ? `\n${status}` : '-# Elige una acción con los botones de abajo.',
-      ].join('\n');
-
-      return createEmbed({ title: '🃏 Blackjack', color: COLORS.ECONOMY, description });
+    const game = {
+      gameId,
+      userId: interaction.user.id,
+      guildId: interaction.guildId,
+      channelId: interaction.channelId,
+      messageId: null,
+      amount,
+      currentBet: amount,
+      doubled: false,
+      playerHand,
+      dealerHand,
+      deck,
+      economy,
+      coinsMultiplier,
+      remainingBalance,
+      resolved: false,
+      timeoutHandle: null,
     };
 
-    const generateButtons = (canDouble = true) => {
-      const row = new ActionRowBuilder();
-      row.addComponents(
-        new ButtonBuilder().setCustomId(`bj_hit_${interaction.user.id}_${gameId}`).setLabel('Pedir carta').setEmoji('🃏').setStyle(ButtonStyle.Primary),
-        new ButtonBuilder().setCustomId(`bj_stand_${interaction.user.id}_${gameId}`).setLabel('Plantarse').setEmoji('🛑').setStyle(ButtonStyle.Success),
-      );
-      if (canDouble && !doubled && remainingBalance >= amount) {
-        row.addComponents(
-          new ButtonBuilder().setCustomId(`bj_double_${interaction.user.id}_${gameId}`).setLabel('Doblar').setEmoji('💥').setStyle(ButtonStyle.Danger),
-        );
-      }
-      row.addComponents(
-        new ButtonBuilder().setCustomId(`bj_surrender_${interaction.user.id}_${gameId}`).setLabel('Retirarse').setEmoji('🏳️').setStyle(ButtonStyle.Secondary),
-      );
-      return row;
-    };
+    createGame(gameId, game);
 
-    const msg = await interaction.editReply({ embeds: [generateEmbed()], components: [generateButtons(true)] });
-
-    const collector = msg.createMessageComponentCollector({
-      componentType: ComponentType.Button,
-      filter: (i) => {
-        const parts = i.customId.split('_');
-        return parts[2] === interaction.user.id && parts[3] === gameId;
-      },
-      time: 120000,
+    const msg = await interaction.editReply({
+      embeds: [buildGameEmbed(game)],
+      components: [buildGameButtons(interaction.user.id, gameId, {
+        canDouble: true,
+        doubled: false,
+        remainingBalance,
+        amount,
+      })],
     });
 
-    const endGame = async (i, status) => {
-      if (resolved) return;
-      resolved = true;
-      gameOver = true;
-      collector.stop();
+    game.messageId = msg.id;
 
-      const pVal = handValue(playerHand);
-      const dVal = handValue(dealerHand);
+    game.timeoutHandle = setTimeout(async () => {
+      const current = getGame(gameId);
+      if (!current) return;
+      deleteGame(gameId);
 
-      const description = [
-        block([
-          kv('Tu mano', `${formatHand(playerHand)} **(${pVal})**`),
-          kv('Dealer', `${formatHand(dealerHand)} **(${dVal})**`),
-        ]),
-        '',
-        status,
-      ].join('\n');
-
-      const embed = createEmbed({ title: '🃏 Blackjack', color: COLORS.ERROR, description });
-      await i.update({ embeds: [embed], components: [] });
-    };
-
-    const resolveDealer = async (i) => {
-      if (resolved) return;
-      resolved = true;
-      gameOver = true;
-      collector.stop();
-
-      while (handValue(dealerHand) < 17) dealerHand.push(deck.pop());
-
-      const pVal = handValue(playerHand);
-      const dVal = handValue(dealerHand);
-
-      let winAmount = 0;
-      let status = '';
-      let color = COLORS.ERROR;
-
-      if (dVal > 21) {
-        const base = currentBet * 2;
-        const withLuck = applyBetLuck(base, economy.upgrades);
-        winAmount = applyEventMultiplier(withLuck, coinsMultiplier);
-        status = `**El dealer se pasó (${dVal}).** Ganaste \`${formatNumber(winAmount - currentBet)}\` coins.`;
-        color = COLORS.SUCCESS;
-      } else if (pVal > dVal) {
-        const base = currentBet * 2;
-        const withLuck = applyBetLuck(base, economy.upgrades);
-        winAmount = applyEventMultiplier(withLuck, coinsMultiplier);
-        status = `**Ganaste** (${pVal} vs ${dVal}). Recibes \`${formatNumber(winAmount - currentBet)}\` coins.`;
-        color = COLORS.SUCCESS;
-      } else if (pVal === dVal) {
-        winAmount = currentBet;
-        status = `**Empate** (${pVal} vs ${dVal}). Recuperas \`${formatNumber(currentBet)}\` coins.`;
-        color = COLORS.WARNING;
-      } else {
-        status = `**Perdiste** (${pVal} vs ${dVal}). Pierdes \`${formatNumber(currentBet)}\` coins.`;
-        color = COLORS.ERROR;
-      }
-
-      if (winAmount > 0) {
-        await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: winAmount } });
-        const netWin = winAmount - currentBet;
-        if (netWin > 0) {
-          await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, netWin);
-        }
-      }
-
-      const description = [
-        block([
-          kv('Tu mano', `${formatHand(playerHand)} **(${pVal})**`),
-          kv('Dealer', `${formatHand(dealerHand)} **(${dVal})**`),
-        ]),
-        '',
-        status,
-      ].join('\n');
-
-      const embed = createEmbed({ title: '🃏 Blackjack', color, description });
-      await i.update({ embeds: [embed], components: [] });
-
-      if (winAmount > currentBet) {
-        await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { blackjackWins: 1 } });
-        const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
-        await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
-      }
-    };
-
-    collector.on('collect', async (i) => {
-      if (gameOver) return;
-      const action = i.customId.split('_')[1];
-
-      if (action === 'hit') {
-        playerHand.push(deck.pop());
-        const pVal = handValue(playerHand);
-
-        if (pVal > 21) return endGame(i, `**Te pasaste (${pVal}).** Perdiste \`${formatNumber(currentBet)}\` coins.`);
-        if (pVal === 21) return resolveDealer(i);
-
-        await i.update({ embeds: [generateEmbed()], components: [generateButtons(false)] });
-      } else if (action === 'stand') {
-        return resolveDealer(i);
-      } else if (action === 'surrender') {
-        const refund = Math.floor(currentBet / 2);
-        await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: refund } });
-        resolved = true;
-        gameOver = true;
-        collector.stop();
-
-        const description = [
-          block([
-            kv('Tu mano', `${formatHand(playerHand)} **(${handValue(playerHand)})**`),
-            kv('Dealer', `${formatHand(dealerHand)} **(${handValue(dealerHand)})**`),
-          ]),
-          '',
-          `**Te retiraste.** Recuperas \`${formatNumber(refund)}\` coins (la mitad de tu apuesta).`,
-        ].join('\n');
-
-        const embed = createEmbed({ title: '🃏 Blackjack', color: COLORS.WARNING, description });
-        await i.update({ embeds: [embed], components: [] });
-      } else if (action === 'double') {
-        const freshEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
-        const currentBalance = freshEconomy?.balance || 0;
-
-        if (currentBalance < amount) {
-          return i.reply({ embeds: [errorEmbed('No tienes suficiente dinero para doblar.')], flags: MessageFlags.Ephemeral });
-        }
-
-        doubled = true;
-        currentBet *= 2;
-        await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -amount } });
-
-        playerHand.push(deck.pop());
-        const pVal = handValue(playerHand);
-
-        if (pVal > 21) return endGame(i, `**Te pasaste (${pVal}).** Perdiste \`${formatNumber(currentBet)}\` coins.`);
-
-        return resolveDealer(i);
-      }
-    });
-
-    collector.on('end', async (_, reason) => {
-      if (resolved || gameOver) return;
-
-      await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: currentBet } });
-
-      const reasonText = reason === 'time' ? 'Se acabó el tiempo' : 'La partida fue interrumpida';
+      await updateGuildEconomy(current.guildId, current.userId, { $inc: { balance: current.currentBet } });
 
       try {
-        await interaction.editReply({
-          embeds: [errorEmbed(`${reasonText}. Tu apuesta de \`${formatNumber(currentBet)}\` coins ha sido devuelta.`)],
+        const channel = await client.channels.fetch(current.channelId).catch(() => null);
+        if (!channel?.isTextBased()) return;
+        const message = await channel.messages.fetch(current.messageId).catch(() => null);
+        if (!message) return;
+        await message.edit({
+          embeds: [errorEmbed(`Se acabó el tiempo. Tu apuesta de \`${formatNumber(current.currentBet)}\` coins ha sido devuelta.`)],
           components: [],
         });
       } catch { /* ignorar */ }
-    });
+    }, 120_000);
   },
 };
