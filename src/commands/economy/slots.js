@@ -8,6 +8,7 @@ import { applyBetLuck } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 const SLOTS = ['🍒', '🍋', '💎', '7️⃣', '🍀', '🔔'];
 
@@ -86,7 +87,11 @@ export default {
     }
 
     let winnings = baseWinnings;
-    if (isWin) winnings = applyBetLuck(Math.floor(baseWinnings), economy.upgrades);
+    if (isWin) {
+      const withLuck = applyBetLuck(Math.floor(baseWinnings), economy.upgrades);
+      const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+      winnings = applyEventMultiplier(withLuck, coinsMultiplier);
+    }
 
     const netChange = isWin ? winnings - amount : -amount;
 
@@ -106,6 +111,7 @@ export default {
 
     const display = `| ${a} | ${b} | ${c} |`;
     const netWin = isWin ? winnings - amount : -amount;
+    const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
 
     const description = [
       display,
@@ -113,8 +119,9 @@ export default {
       block([
         kv('Apuesta', `\`${formatNumber(amount)} coins\``),
         kv(isWin ? 'Ganancia' : 'Pérdida', `\`${formatNumber(Math.abs(netWin))} coins\``),
+        isWin && coinsMultiplier > 1 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
         kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-      ]),
+      ].filter(Boolean)),
     ].join('\n');
 
     const embed = createEmbed({

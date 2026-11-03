@@ -8,9 +8,41 @@ import { getUserData, getGuildEconomy } from '../../utils/guildData.js';
 import { getGuildLevel, getXpForLevel } from '../../utils/levelSystem.js';
 import { getAllBadgesText } from '../../utils/badges.js';
 import { formatAchievements } from '../../utils/achievements.js';
+import { GuildLevel } from '../../models/GuildLevel.js';
+import { User } from '../../models/User.js';
+import { getActiveEvents, formatEventType, formatMultiplier } from '../../utils/eventManager.js';
 
 function getGlobalXpForLevel(level) {
   return level * level * 100;
+}
+
+async function getGuildPosition(guildId, level, xp) {
+  const above = await GuildLevel.countDocuments({
+    guildId,
+    $or: [
+      { level: { $gt: level } },
+      { level, xp: { $gt: xp } },
+    ],
+  });
+  return above + 1;
+}
+
+async function getGlobalPosition(level, xp) {
+  const above = await User.countDocuments({
+    $or: [
+      { level: { $gt: level } },
+      { level, xp: { $gt: xp } },
+    ],
+  });
+  return above + 1;
+}
+
+function formatActiveEvents(events) {
+  if (!events || events.length === 0) return null;
+  return events.map(e => {
+    const endTs = Math.floor(new Date(e.endTime).getTime() / 1000);
+    return `> ${formatEventType(e.type)} — **${e.name || 'Sin nombre'}** ${formatMultiplier(e.multiplier)} · <t:${endTs}:R>`;
+  }).join('\n');
 }
 
 export default {
@@ -37,10 +69,12 @@ export default {
     const guildXpNeeded = getXpForLevel(guildLevelData.level);
     const guildPct = formatPercentage(guildLevelData.xp, guildXpNeeded);
     const guildBar = createProgressBar(guildLevelData.xp, guildXpNeeded, 14);
+    const guildPosition = await getGuildPosition(interaction.guildId, guildLevelData.level, guildLevelData.xp);
 
     const globalXpNeeded = getGlobalXpForLevel(data.level);
     const globalPct = formatPercentage(data.xp, globalXpNeeded);
     const globalBar = createProgressBar(data.xp, globalXpNeeded, 14);
+    const globalPosition = await getGlobalPosition(data.level, data.xp);
 
     const wallet = economy?.balance || 0;
     const bank = economy?.bank || 0;
@@ -48,7 +82,10 @@ export default {
 
     const achievements = await formatAchievements(interaction.guildId, target.id);
 
-    const description = [
+    const activeEvents = await getActiveEvents();
+    const eventsBlock = formatActiveEvents(activeEvents);
+
+    const lines = [
       block([
         kv('Cuenta creada', formatRelativeTime(target.createdTimestamp)),
         kv('Mensajes', `\`${formatNumber(data.messages || 0)}\``),
@@ -65,6 +102,7 @@ export default {
       header('🏠', 'Nivel del servidor'),
       block([
         kv('Nivel', `\`${guildLevelData.level}\``),
+        kv('Posición', `\`#${guildPosition}\``),
         `\`${guildBar}\` **${guildPct}%**`,
         `\`${formatNumber(guildLevelData.xp)} / ${formatNumber(guildXpNeeded)} XP\``,
       ]),
@@ -72,6 +110,7 @@ export default {
       header('🌍', 'Nivel global'),
       block([
         kv('Nivel', `\`${data.level}\``),
+        kv('Posición', `\`#${globalPosition}\``),
         `\`${globalBar}\` **${globalPct}%**`,
         `\`${formatNumber(data.xp)} / ${formatNumber(globalXpNeeded)} XP\``,
       ]),
@@ -80,13 +119,17 @@ export default {
       '',
       header('🎖️', 'Insignias'),
       getAllBadgesText(data.badges) || '`Ninguna`',
-    ].join('\n');
+    ];
+
+    if (eventsBlock) {
+      lines.push('', header('🎉', 'Eventos activos'), eventsBlock);
+    }
 
     const embed = createEmbed({
       color: COLORS.LEVELING,
       title: `👤 ${target.username}`,
       thumbnail: target.displayAvatarURL({ dynamic: true, size: 256 }),
-      description,
+      description: lines.join('\n'),
       footer: {
         text: `Solicitado por ${interaction.user.username}`,
         icon: interaction.user.displayAvatarURL(),

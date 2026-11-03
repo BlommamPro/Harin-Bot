@@ -8,6 +8,7 @@ import { applyDailyBonus } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -51,7 +52,9 @@ export default {
 
     const streakBonus = newStreak > 1 ? config.dailyStreakBonus * (newStreak - 1) : 0;
     const baseReward = config.dailyReward + streakBonus;
-    const totalReward = applyDailyBonus(baseReward, economy.upgrades);
+    const withUpgrades = applyDailyBonus(baseReward, economy.upgrades);
+    const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+    const totalReward = applyEventMultiplier(withUpgrades, coinsMultiplier);
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, {
       $inc: { balance: totalReward },
@@ -70,6 +73,7 @@ export default {
     const description = block([
       kv('Recompensa', `\`${formatNumber(totalReward)} coins\``),
       newStreak > 1 ? kv('Racha', `\`${newStreak} días\` (+${formatNumber(streakBonus)} bonus)`) : null,
+      coinsMultiplier > 1 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
       kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
     ].filter(Boolean));
 

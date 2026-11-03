@@ -80,6 +80,19 @@ export default {
     )
     .addSubcommand((sub) =>
       sub
+        .setName("cooldown")
+        .setDescription("Ajustar el cooldown de XP por mensaje (mínimo 30s)")
+        .addIntegerOption((opt) =>
+          opt
+            .setName("segundos")
+            .setDescription("Segundos entre mensajes que dan XP (30-3600)")
+            .setRequired(true)
+            .setMinValue(30)
+            .setMaxValue(3600),
+        ),
+    )
+    .addSubcommand((sub) =>
+      sub
         .setName("ignore")
         .setDescription("Excluir un canal de la obtención de XP")
         .addChannelOption((opt) =>
@@ -234,6 +247,24 @@ export default {
           successEmbed(
             `Mensaje de subida de nivel actualizado:\n\n` +
               `${text.replace("{user}", "@usuario").replace("{level}", "10")}`,
+          ),
+        ],
+      });
+    }
+
+    if (sub === "cooldown") {
+      const seconds = interaction.options.getInteger("segundos");
+
+      await LevelConfig.findOneAndUpdate(
+        { guildId },
+        { cooldownSeconds: seconds },
+        { upsert: true, new: true },
+      );
+
+      return interaction.reply({
+        embeds: [
+          successEmbed(
+            `Cooldown de XP por mensaje: \`${seconds}s\``,
           ),
         ],
       });

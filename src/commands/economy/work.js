@@ -8,6 +8,7 @@ import { applyWorkBonus } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 const JOBS = [
   { name: 'desarrollador de software', description: 'trabajaste en una startup tecnológica', emoji: '💻' },
@@ -67,7 +68,9 @@ export default {
       else quality = 'Trabajaste bien';
     }
 
-    const reward = applyWorkBonus(baseReward, economy.upgrades);
+    const withUpgrades = applyWorkBonus(baseReward, economy.upgrades);
+    const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+    const reward = applyEventMultiplier(withUpgrades, coinsMultiplier);
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, {
       $inc: { balance: reward, works: 1 },
@@ -79,20 +82,21 @@ export default {
     const updatedEconomy = await getGuildEconomy(interaction.guildId, interaction.user.id);
     const newAchievements = await checkAchievements(interaction.guildId, interaction.user.id, updatedEconomy);
 
-    const description = [
+    const lines = [
       `-# ${job.description}`,
       '',
       block([
         kv('Calidad', quality),
         kv('Ganancia', `\`${formatNumber(reward)} coins\``),
+        coinsMultiplier > 1 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
         kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-      ]),
-    ].join('\n');
+      ].filter(Boolean)),
+    ];
 
     const embed = createEmbed({
       color: COLORS.SUCCESS,
       title: `${job.emoji} ${job.name.charAt(0).toUpperCase() + job.name.slice(1)}`,
-      description,
+      description: lines.join('\n'),
     });
 
     if (newAchievements.length > 0) {

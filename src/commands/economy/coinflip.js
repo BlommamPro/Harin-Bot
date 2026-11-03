@@ -7,6 +7,7 @@ import { applyBetLuck, applyLuckyCharm } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -77,16 +78,21 @@ export default {
     await setDbCooldown(interaction.user.id, `coinflip_${interaction.guildId}`);
 
     if (won) {
-      const winnings = luckySave ? amount : applyBetLuck(amount, economy.upgrades);
+      const baseWinnings = luckySave ? amount : applyBetLuck(amount, economy.upgrades);
+      const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+      const winnings = applyEventMultiplier(baseWinnings, coinsMultiplier);
+      const netProfit = winnings - amount;
+
       await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: winnings } });
-      await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, winnings - amount);
+      await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, Math.max(0, netProfit));
 
       const description = [
         block([
           kv('Resultado', `**${result.toUpperCase()}**`),
           kv('Tu elección', `**${side.toUpperCase()}**`),
-          kv('Ganancia', `\`${formatNumber(winnings - amount)} coins\``),
-        ]),
+          kv('Ganancia', `\`${formatNumber(netProfit)} coins\``),
+          coinsMultiplier > 1 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
+        ].filter(Boolean)),
         luckySave ? '\n-# 🍀 Tu amuleto te salvó de perder' : '',
       ].filter(Boolean).join('\n');
 

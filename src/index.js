@@ -7,6 +7,7 @@ import { connectDB } from "./utils/database.js";
 import { logger } from "./utils/logger.js";
 import { setupProcessHandlers } from "./utils/anticrash.js";
 import { setupDBShutdown } from './utils/database.js';
+import { cleanupExpiredEvents, refreshActiveEvents } from "./utils/eventManager.js";
 
 const client = new Client({
   intents: [
@@ -42,6 +43,20 @@ async function start() {
     await connectDB();
     setupDBShutdown(client);
   }
+
+  try {
+    const cleaned = await cleanupExpiredEvents();
+    if (cleaned > 0) logger.info(`Eventos expirados cerrados al arrancar: ${cleaned}`);
+    await refreshActiveEvents();
+  } catch (err) {
+    logger.warn('No pude limpiar/refrescar eventos al arrancar:', err.message);
+  }
+
+  setInterval(() => {
+    cleanupExpiredEvents().catch(err =>
+      logger.warn('Error en limpieza periódica de eventos:', err.message)
+    );
+  }, 5 * 60_000);
 
   await loadEvents(client);
   await loadCommands(client);

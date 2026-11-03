@@ -8,6 +8,7 @@ import { applyPetBonus } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 const FISH = [
   { name: 'Sardina', emoji: '🐟', min: 10, max: 30, chance: 0.30, rarity: 'Común' },
@@ -84,7 +85,9 @@ export default {
     const baseReward = caught.min === caught.max
       ? caught.min
       : Math.floor(Math.random() * (caught.max - caught.min + 1)) + caught.min;
-    const reward = baseReward > 0 ? applyPetBonus(baseReward, economy.upgrades) : 0;
+    const withUpgrades = baseReward > 0 ? applyPetBonus(baseReward, economy.upgrades) : 0;
+    const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+    const reward = withUpgrades > 0 ? applyEventMultiplier(withUpgrades, coinsMultiplier) : 0;
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, {
       $inc: { balance: reward },
@@ -101,8 +104,9 @@ export default {
       kv('Captura', `${caught.emoji} **${caught.name}**`),
       kv('Rareza', `\`${caught.rarity}\``),
       kv('Ganancia', reward > 0 ? `\`${formatNumber(reward)} coins\`` : '`Nada`'),
+      coinsMultiplier > 1 && reward > 0 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
       kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-    ]);
+    ].filter(Boolean));
 
     const embed = createEmbed({
       color: RARITY_COLORS[caught.rarity] || COLORS.ECONOMY,

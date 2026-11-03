@@ -1,4 +1,11 @@
-import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } from 'discord.js';
+import {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  MessageFlags,
+  EmbedBuilder,
+} from 'discord.js';
 import { createEmbed, errorEmbed, COLORS } from '../../utils/embeds.js';
 import { block, kv, formatNumber } from '../../utils/embedDecorations.js';
 
@@ -59,6 +66,9 @@ export default {
          )
          .addStringOption(opt =>
            opt.setName('mensaje').setDescription('Mensaje a enviar').setRequired(true).setMaxLength(2000)
+         )
+         .addStringOption(opt =>
+           opt.setName('titulo').setDescription('Título del embed (opcional)').setRequired(false).setMaxLength(256)
          )
          .addStringOption(opt =>
            opt.setName('canal').setDescription('ID del canal (opcional)').setRequired(false)
@@ -414,6 +424,7 @@ export default {
     if (sub === 'announce') {
       const guildId = interaction.options.getString('id');
       const message = interaction.options.getString('mensaje');
+      const titleInput = interaction.options.getString('titulo');
       const channelId = interaction.options.getString('canal');
 
       const guild = client.guilds.cache.get(guildId);
@@ -455,17 +466,13 @@ export default {
       }
 
       try {
-        const embed = createEmbed({
-          color: COLORS.OWNER,
-          title: '📢 Anuncio del owner',
-          description: message,
-          footer: {
-            text: `Enviado por ${interaction.user.tag}`,
-            icon: interaction.user.displayAvatarURL(),
-          },
-        });
+        const announceEmbed = new EmbedBuilder()
+          .setColor(COLORS.OWNER)
+          .setTitle(titleInput?.trim() || '📢 Anuncio')
+          .setDescription(message)
+          .setTimestamp();
 
-        await targetChannel.send({ embeds: [embed] });
+        await targetChannel.send({ embeds: [announceEmbed] });
 
         return interaction.reply({
           embeds: [createEmbed({
@@ -474,6 +481,7 @@ export default {
             description: block([
               kv('Servidor', guild.name),
               kv('Canal', targetChannel.toString()),
+              kv('Título', titleInput?.trim() || '📢 Anuncio'),
             ]),
           })],
           flags: MessageFlags.Ephemeral,

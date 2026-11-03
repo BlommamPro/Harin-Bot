@@ -15,6 +15,7 @@ import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { checkAchievements } from '../../utils/achievements.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 const SUITS = ['♠', '♥', '♦', '♣'];
 const RANKS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
@@ -118,6 +119,8 @@ export default {
     await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: -amount } });
     await setDbCooldown(interaction.user.id, `blackjack_${interaction.guildId}`);
 
+    const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+
     let deck = shuffle(createDeck());
     const playerHand = [deck.pop(), deck.pop()];
     const dealerHand = [deck.pop(), deck.pop()];
@@ -133,7 +136,8 @@ export default {
         color = COLORS.WARNING;
       } else {
         const baseWinnings = Math.floor(amount * 1.5);
-        const winnings = applyBetLuck(baseWinnings, economy.upgrades);
+        const withLuck = applyBetLuck(baseWinnings, economy.upgrades);
+        const winnings = applyEventMultiplier(withLuck, coinsMultiplier);
         await updateGuildEconomy(interaction.guildId, interaction.user.id, { $inc: { balance: amount + winnings } });
         await addWeeklyCoins(interaction.guildId, interaction.user.id, interaction.user.username, winnings);
         resultText = `**¡Blackjack!** Ganaste \`${formatNumber(winnings)}\` coins (pago 3:2).`;
@@ -251,11 +255,15 @@ export default {
       let color = COLORS.ERROR;
 
       if (dVal > 21) {
-        winAmount = applyBetLuck(currentBet * 2, economy.upgrades);
+        const base = currentBet * 2;
+        const withLuck = applyBetLuck(base, economy.upgrades);
+        winAmount = applyEventMultiplier(withLuck, coinsMultiplier);
         status = `**El dealer se pasó (${dVal}).** Ganaste \`${formatNumber(winAmount - currentBet)}\` coins.`;
         color = COLORS.SUCCESS;
       } else if (pVal > dVal) {
-        winAmount = applyBetLuck(currentBet * 2, economy.upgrades);
+        const base = currentBet * 2;
+        const withLuck = applyBetLuck(base, economy.upgrades);
+        winAmount = applyEventMultiplier(withLuck, coinsMultiplier);
         status = `**Ganaste** (${pVal} vs ${dVal}). Recibes \`${formatNumber(winAmount - currentBet)}\` coins.`;
         color = COLORS.SUCCESS;
       } else if (pVal === dVal) {

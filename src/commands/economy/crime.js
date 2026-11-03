@@ -8,6 +8,7 @@ import { applyCrimeLuck, applyPetBonus, applyInsurance } from '../../utils/apply
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 const CRIMES = [
   { name: 'robo a un banco', description: 'planeaste y ejecutaste un atraco perfecto', min: 80, max: 350, failPenalty: 150, emoji: '🏦' },
@@ -70,7 +71,9 @@ export default {
 
     if (success) {
       const baseReward = Math.floor(Math.random() * (crime.max - crime.min + 1)) + crime.min;
-      const reward = applyPetBonus(baseReward, economy.upgrades);
+      const withUpgrades = applyPetBonus(baseReward, economy.upgrades);
+      const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+      const reward = applyEventMultiplier(withUpgrades, coinsMultiplier);
 
       await updateGuildEconomy(interaction.guildId, interaction.user.id, {
         $inc: { balance: reward, crimes: 1 },
@@ -86,9 +89,10 @@ export default {
         '',
         block([
           kv('Ganancia', `\`${formatNumber(reward)} coins\``),
+          coinsMultiplier > 1 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
           kv('Crímenes', `\`${updatedEconomy.crimes}\``),
           kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-        ]),
+        ].filter(Boolean)),
       ].join('\n');
 
       const embed = createEmbed({

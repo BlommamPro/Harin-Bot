@@ -8,6 +8,7 @@ import { applyPetBonus } from '../../utils/applyUpgrades.js';
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 const MINERALS = [
   { name: 'Carbón', emoji: '⚫', min: 15, max: 40, chance: 0.30, rarity: 'Común' },
@@ -83,7 +84,9 @@ export default {
     const baseReward = found.min === found.max
       ? found.min
       : Math.floor(Math.random() * (found.max - found.min + 1)) + found.min;
-    const reward = baseReward > 0 ? applyPetBonus(baseReward, economy.upgrades) : 0;
+    const withUpgrades = baseReward > 0 ? applyPetBonus(baseReward, economy.upgrades) : 0;
+    const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+    const reward = withUpgrades > 0 ? applyEventMultiplier(withUpgrades, coinsMultiplier) : 0;
 
     await updateGuildEconomy(interaction.guildId, interaction.user.id, {
       $inc: { balance: reward },
@@ -100,8 +103,9 @@ export default {
       kv('Encontrado', `${found.emoji} **${found.name}**`),
       kv('Rareza', `\`${found.rarity}\``),
       kv('Ganancia', reward > 0 ? `\`${formatNumber(reward)} coins\`` : '`Nada`'),
+      coinsMultiplier > 1 && reward > 0 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
       kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-    ]);
+    ].filter(Boolean));
 
     const embed = createEmbed({
       color: RARITY_COLORS[found.rarity] || COLORS.ECONOMY,

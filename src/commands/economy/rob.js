@@ -8,6 +8,7 @@ import { applyRobSkill, applyPetBonus, applyInsurance } from '../../utils/applyU
 import { addWeeklyCoins } from '../../utils/weeklyRanking.js';
 import { getEconomyConfig } from '../../utils/economyConfigGuild.js';
 import { checkEconomyEnabled } from '../../utils/economyGuard.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 export default {
   CMD: new SlashCommandBuilder()
@@ -63,7 +64,9 @@ export default {
     if (success) {
       const stolenPercent = Math.random() * 0.20 + 0.10;
       const baseStolen = Math.floor(targetEconomy.balance * stolenPercent);
-      const stolen = applyPetBonus(baseStolen, economy.upgrades);
+      const withUpgrades = applyPetBonus(baseStolen, economy.upgrades);
+      const coinsMultiplier = await getActiveMultiplier('coins').catch(() => 1);
+      const stolen = applyEventMultiplier(withUpgrades, coinsMultiplier);
 
       await updateGuildEconomy(interaction.guildId, interaction.user.id, {
         $inc: { balance: stolen, robs: 1 },
@@ -80,9 +83,10 @@ export default {
       const description = block([
         kv('Víctima', target.username),
         kv('Robado', `\`${formatNumber(stolen)} coins\``),
+        coinsMultiplier > 1 ? kv('Bonus eventos', `\`x${coinsMultiplier.toFixed(2)}\``) : null,
         kv('Robos exitosos', `\`${updatedEconomy.robs}\``),
         kv('Balance actual', `\`${formatNumber(updatedEconomy.balance)} coins\``),
-      ]);
+      ].filter(Boolean));
 
       const embed = createEmbed({
         color: COLORS.SUCCESS,

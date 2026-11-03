@@ -2,6 +2,7 @@ import { getGuildData, getUserData, updateUserData } from '../../utils/guildData
 import { addGuildXp, getLevelConfig, getXpForLevel } from '../../utils/levelSystem.js';
 import { User } from '../../models/User.js';
 import { logger } from '../../utils/logger.js';
+import { getActiveMultiplier, applyEventMultiplier } from '../../utils/eventManager.js';
 
 const MIN_XP = 15;
 const MAX_XP = 25;
@@ -39,8 +40,12 @@ export default {
     if (!globalXpCooldowns.has(userId) || now - globalXpCooldowns.get(userId) > 60000) {
       globalXpCooldowns.set(userId, now);
 
+      const xpMultiplier = await getActiveMultiplier('xp').catch(() => 1);
+
       const userData = await getUserData(userId, message.author.username);
-      const xpGain = Math.floor(Math.random() * (MAX_XP - MIN_XP + 1)) + MIN_XP;
+      const baseGain = Math.floor(Math.random() * (MAX_XP - MIN_XP + 1)) + MIN_XP;
+      const xpGain = applyEventMultiplier(baseGain, xpMultiplier);
+
       let newXp = (userData?.xp || 0) + xpGain;
       let newLevel = userData?.level || 1;
       let leveledUp = false;
@@ -85,14 +90,17 @@ export default {
     }
 
     const key = `${guildId}-${userId}`;
-    const cooldownMs = Math.max((levelConfig.cooldownSeconds || 60) * 1000, 5000);
+    const cooldownMs = Math.max((levelConfig.cooldownSeconds || 60) * 1000, 30000);
 
     if (!guildXpCooldowns.has(key) || now - guildXpCooldowns.get(key) > cooldownMs) {
       guildXpCooldowns.set(key, now);
 
-      const xpAmount = Math.floor(
+      const xpMultiplier = await getActiveMultiplier('xp').catch(() => 1);
+
+      const baseAmount = Math.floor(
         Math.random() * ((levelConfig.xpMax || 25) - (levelConfig.xpMin || 15) + 1)
       ) + (levelConfig.xpMin || 15);
+      const xpAmount = applyEventMultiplier(baseAmount, xpMultiplier);
 
       const result = await addGuildXp(guildId, userId, xpAmount);
 
@@ -115,7 +123,7 @@ export default {
             const finalMessage = messageTemplate
               .replace(/{user}/g, `<@${userId}>`)
               .replace(/{level}/g, result.newLevel);
-            
+
             await channel.send(finalMessage).catch(() => {});
           }
         }
