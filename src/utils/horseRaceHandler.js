@@ -4,12 +4,12 @@ const races = new Map();
 const guildCooldowns = new Map();
 
 export const HORSES = [
-  { name: 'Rayo',     emoji: '🐎', weight: 30, odds: 2.0 },
-  { name: 'Trueno',   emoji: '🐎', weight: 25, odds: 2.5 },
-  { name: 'Tormenta', emoji: '🐎', weight: 20, odds: 3.0 },
-  { name: 'Centella', emoji: '🐎', weight: 15, odds: 4.0 },
-  { name: 'Fantasma', emoji: '🐎', weight: 8,  odds: 5.0 },
-  { name: 'Leyenda',  emoji: '🐎', weight: 2,  odds: 7.0 },
+  { name: 'Rayo',     emoji: '<:horse1:1574812103871823964>', weight: 30, odds: 2.0 },
+  { name: 'Trueno',   emoji: '<:horse2:1574812174273085510>', weight: 25, odds: 2.5 },
+  { name: 'Tormenta', emoji: '<:horse3:1574812437977239572>', weight: 20, odds: 3.0 },
+  { name: 'Centella', emoji: '<:hotse4:1574812504994087012>', weight: 15, odds: 4.0 },
+  { name: 'Fantasma', emoji: '<:horse5:1574812562061664327>', weight: 8,  odds: 5.0 },
+  { name: 'Leyenda',  emoji: '<:horse6:1574812608861569184>', weight: 2,  odds: 7.0 },
 ];
 
 const TOTAL_WEIGHT = HORSES.reduce((s, h) => s + h.weight, 0);

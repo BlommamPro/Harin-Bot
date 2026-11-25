@@ -4,10 +4,14 @@ import {
   StringSelectMenuOptionBuilder,
   ActionRowBuilder,
   MessageFlags,
+  EmbedBuilder,
 } from 'discord.js';
-import { createEmbed, COLORS } from '../../utils/embeds.js';
+import { COLORS, BRANDING } from '../../utils/embeds.js';
 import { header, block, kv } from '../../utils/embedDecorations.js';
 import { config } from '../../../config/config.js';
+
+const HELP_URL = 'https://estrellastudios-dev.github.io/bots/harin/index.html';
+const PRIVACY_URL = 'https://estrellastudios-dev.github.io/bots/harin/privacy.html';
 
 const CATEGORY_INFO = {
   general: { label: 'General', emoji: '🌐', description: 'Comandos generales' },
@@ -60,18 +64,19 @@ export default {
       ]),
       '',
       isOwner ? '-# 👑 Tienes acceso a comandos exclusivos de owner.' : '',
-      `[Política de Privacidad](https://blommampro.github.io/harin-bot-legal/privacy)`,
+      `[Política de Privacidad](${PRIVACY_URL})`,
     ].filter(Boolean).join('\n');
 
-    const embed = createEmbed({
-      color: COLORS.INFO,
-      title: '📖 Menú de ayuda',
-      description,
-      footer: {
+    const embed = new EmbedBuilder()
+      .setColor(COLORS.INFO)
+      .setTitle('📖 Menú de ayuda')
+      .setURL(HELP_URL)
+      .setDescription(description)
+      .setFooter({
         text: `Solicitado por ${interaction.user.username}`,
-        icon: interaction.user.displayAvatarURL(),
-      },
-    });
+        iconURL: interaction.user.displayAvatarURL(),
+      })
+      .setTimestamp();
 
     const options = [];
     for (const [cat, count] of categories) {

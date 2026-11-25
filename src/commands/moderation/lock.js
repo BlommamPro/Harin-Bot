@@ -7,7 +7,7 @@ export default {
     .setName('lock')
     .setDescription('Bloquea un canal para que nadie escriba')
     .setDMPermission(false)
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addChannelOption(opt =>
       opt.setName('canal')
          .setDescription('Canal a bloquear (por defecto: actual)')
@@ -18,8 +18,8 @@ export default {
       opt.setName('razon').setDescription('Razón del bloqueo').setRequired(false).setMaxLength(512)
     ),
 
-  PERMISSIONS: ['ManageChannels'],
-  BOT_PERMISSIONS: ['ManageChannels'],
+  PERMISSIONS: ['ManageRoles'],
+  BOT_PERMISSIONS: ['ManageRoles'],
   OWNER: false,
   COOLDOWN: 5,
   GUILD_ONLY: true,

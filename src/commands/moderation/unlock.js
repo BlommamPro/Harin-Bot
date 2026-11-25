@@ -7,7 +7,7 @@ export default {
     .setName('unlock')
     .setDescription('Desbloquea un canal para que todos puedan escribir')
     .setDMPermission(false)
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels)
+    .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles)
     .addChannelOption(opt =>
       opt.setName('canal')
          .setDescription('Canal a desbloquear (por defecto: actual)')
@@ -18,8 +18,8 @@ export default {
       opt.setName('razon').setDescription('Razón del desbloqueo').setRequired(false).setMaxLength(512)
     ),
 
-  PERMISSIONS: ['ManageChannels'],
-  BOT_PERMISSIONS: ['ManageChannels'],
+  PERMISSIONS: ['ManageRoles'],
+  BOT_PERMISSIONS: ['ManageRoles'],
   OWNER: false,
   COOLDOWN: 5,
   GUILD_ONLY: true,
